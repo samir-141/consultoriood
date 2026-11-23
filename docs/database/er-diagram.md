@@ -6,6 +6,8 @@
 
 Este documento define las entidades del MVP. No es todavía el esquema definitivo: faltan confirmar reglas de agenda y retención.
 
+La propuesta técnica de agenda detalla los cambios a evaluar en el intervalo ocupado, el vencimiento de holds, la reprogramación y el alcance de los bloqueos antes de convertir este borrador en migraciones. [Garantías de la agenda](scheduling-guarantees.md).
+
 ## 1. Diagrama de agenda, pacientes y dinero
 
 ```mermaid
