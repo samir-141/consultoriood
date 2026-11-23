@@ -9,6 +9,7 @@
 - El MVP prevé una sede en Perú, varios odontólogos, cobros manuales en PEN y un número de WhatsApp dedicado. El diseño de datos sigue siendo preliminar.
 - El repositorio local tiene línea base en `5a3edf4` y worktrees de Orca para ADE-005 y ADE-006. La integración local contiene agenda (`6f75a0c`) y la base Next.js (`6ea2862`).
 - La base ejecutable incluye Next.js App Router, TypeScript estricto, Tailwind, una página de arranque en español y scripts reproducibles. Se verificó en Windows con Node.js `v26.12.1` y npm `11.20.0`. [README](../README.md) · [Informe de ADE-005](../reports/ade-005-verification.md)
+- El prototipo HTML permite revisar la reserva, la agenda de recepción y la vista del odontólogo con datos sintéticos. Las simulaciones se ejecutan en memoria en el navegador. [Prototipo](../docs/design/wireframes.html)
 
 ## Agentes y modelos
 
@@ -30,6 +31,7 @@
 | Enlaces relativos, dependencias y estado de los registros de gestión | Verificados localmente. |
 | Git y Orca | Línea base, worktrees, ramas y resultados de los trabajadores contrastados. |
 | Base integrada | `npm.cmd ci --no-audit --no-fund`, tipos, lint, build y prueba HTTP de producción. npm advierte que ESLint 9.39.5 está fuera de soporte. |
+| Prototipo ADE-009 | Se verificaron en Orca el vencimiento y la confirmación de una reserva, la reprogramación con motivo, la cancelación, los bloqueos de agenda y el borrador clínico. Las tres vistas se probaron a 390 px. |
 | Pruebas del MVP | Concurrencia PostgreSQL, permisos, aislamiento, restauración y E2E pendientes de sus implementaciones. |
 
 ## Riesgos y decisiones abiertas

@@ -16,6 +16,7 @@
 - [x] Línea base Git y espacios aislados en Orca.
 - [x] Base de Next.js con instalación reproducible, tipos, lint, build y arranque comprobados.
 - [x] Diseño de concurrencia, vencimiento y reprogramación de agenda revisado e integrado.
+- [x] [Prototipo navegable de reserva, agenda y ficha clínica](design/wireframes.html) con datos sintéticos.
 
 ## En curso
 
@@ -23,17 +24,17 @@
 - [ ] Validación del modelo de datos preliminar.
 - [ ] Recolección de servicios, duraciones, precios y horarios.
 - [ ] Validación de las propuestas de [acceso clínico](requirements/clinical-access-proposal.md) y [confirmación de citas y pagos](database/appointment-payments-proposal.md).
+- [ ] Revisión de los flujos del prototipo con recepción y odontología.
 
 ## Próximos pasos
 
 1. Confirmar reglas de agenda, cancelación y no-show.
 2. Confirmar marca, dominio y titularidad de la cuenta de Meta Business.
 3. Validar el modelo de datos y las transiciones de agenda y pagos.
-4. Wireframes de reserva, agenda y ficha clínica.
-5. Completar el Hito 1 con base de datos, autenticación y migraciones cuando el consultorio valide las políticas pertinentes.
-6. Implementar Hito 2: landing + agenda + reserva.
-7. Implementar Hito 3: WhatsApp (confirmación y recordatorio).
-8. Implementar Hito 4: historia clínica y pagos manuales.
+4. Completar el Hito 1 con base de datos, autenticación y migraciones cuando el consultorio valide las políticas pertinentes.
+5. Implementar Hito 2: landing + agenda + reserva.
+6. Implementar Hito 3: WhatsApp (confirmación y recordatorio).
+7. Implementar Hito 4: historia clínica y pagos manuales.
 
 ## Bloqueos
 

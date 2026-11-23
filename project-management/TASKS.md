@@ -89,3 +89,12 @@ Actualizado el 2026-11-23. Las dependencias se refieren a los identificadores de
 - **Criterios de aceptación.** Eventos de confirmación y validación manual definidos, asociaciones y cálculo de saldos documentados. Si el precio histórico es un requisito, precisar dónde se conserva.
 - **Riesgos.** Expirar reservas a la espera de revisión manual, acreditar comprobantes sin validar o recalcular saldos con precios vigentes.
 - **Verificación.** Casos previstos de confirmación con pago pendiente, vencimiento, rechazo, abono parcial, duplicados y cambio de precio. [Propuesta de confirmación y pagos](../docs/database/appointment-payments-proposal.md)
+
+## ADE-009 · Prototipar reserva, agenda y ficha clínica
+
+- **Estado y prioridad.** Prototipo completado, P0. Revisión del consultorio pendiente.
+- **Responsable.** GPT.
+- **Objetivo.** Permitir que el consultorio evalúe los recorridos de paciente, recepción y odontólogo con datos sintéticos.
+- **Archivos.** [Wireframes navegables](../docs/design/wireframes.html).
+- **Dependencias.** ADE-006 y la propuesta de alcance clínico de ADE-007. Las políticas definitivas se validan en las tareas correspondientes.
+- **Verificación.** Confirmación y vencimiento de reserva, reprogramación con motivo, cancelación, bloqueo, filtros de agenda y borrador de atención probados en el navegador de Orca. Revisión de las tres vistas a 390 px.
