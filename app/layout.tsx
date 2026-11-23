@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Consultorio dental",
-  description: "Base local de la aplicación.",
+  title: { default: "Consultorio dental", template: "%s · Consultorio dental" },
+  description: "Reserva una cita dental y gestiona tu atención en Lima, Perú.",
   robots: {
     index: false,
     follow: false,
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f8fafc",
+  themeColor: "#f6f5ee",
 };
 
 type RootLayoutProps = Readonly<{
@@ -24,7 +24,7 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="es-PE">
-      <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
+      <body>
         {children}
       </body>
     </html>

@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-**Fase actual:** Base local disponible y diseño del MVP en validación
+**Fase actual:** Versión web local 1.0.1 disponible para validación del consultorio
 **Última actualización:** 2026-11-23
 
 ## Completado
@@ -17,6 +17,10 @@
 - [x] Base de Next.js con instalación reproducible, tipos, lint, build y arranque comprobados.
 - [x] Diseño de concurrencia, vencimiento y reprogramación de agenda revisado e integrado.
 - [x] [Prototipo navegable de reserva, agenda y ficha clínica](design/wireframes.html) con datos sintéticos, reserva guiada y acciones secundarias bajo demanda.
+- [x] Landing, catálogo y flujo de reserva con enlace de gestión.
+- [x] Agenda diaria y semanal, pacientes, sesiones y permisos por rol.
+- [x] Ficha clínica con historial, adjuntos privados, auditoría, pagos manuales y saldos.
+- [x] Bandeja local de confirmaciones y recordatorios de WhatsApp en modo simulación.
 
 ## En curso
 
@@ -31,10 +35,8 @@
 1. Confirmar reglas de agenda, cancelación y no-show.
 2. Confirmar marca, dominio y titularidad de la cuenta de Meta Business.
 3. Validar el modelo de datos y las transiciones de agenda y pagos.
-4. Completar el Hito 1 con base de datos, autenticación y migraciones cuando el consultorio valide las políticas pertinentes.
-5. Implementar Hito 2: landing + agenda + reserva.
-6. Implementar Hito 3: WhatsApp (confirmación y recordatorio).
-7. Implementar Hito 4: historia clínica y pagos manuales.
+4. Configurar Supabase, autenticación de producción y las migraciones correspondientes cuando el consultorio apruebe las políticas.
+5. Configurar Meta WhatsApp y validar envíos con un entorno y un número autorizados.
 
 ## Bloqueos
 
@@ -43,7 +45,7 @@
 
 ## Verificación ejecutada
 
-Se completaron la auditoría inicial, la revisión de concurrencia de agenda y las verificaciones de la base local integrada. Las pruebas de negocio se ejecutarán con las implementaciones correspondientes. [Estado del proyecto](../project-management/CURRENT_STATE.md)
+La prueba de integración reproduce reservas concurrentes, vencimiento, permisos, adjuntos privados, pagos y persistencia tras reiniciar. [Arranque y verificación](../README.md)
 
 ## Riesgos conocidos
 

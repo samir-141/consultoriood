@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 360" width="100%" height="100%" role="img" aria-label="Ilustración editorial de portada: atención dental ordenada con calendario de citas y cuidado profesional">
+  <defs>
+    <linearGradient id="hero-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FBF4E6"/>
+      <stop offset="100%" stop-color="#F4ECE0"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-8%" y="-8%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#173F37" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Marco de fondo editorial -->
+  <rect width="540" height="360" rx="24" fill="url(#hero-bg)"/>
+  <rect x="16" y="16" width="508" height="328" rx="18" fill="none" stroke="#DDEEE4" stroke-width="1.75"/>
+  <circle cx="270" cy="180" r="130" fill="#DDEEE4" fill-opacity="0.45"/>
+  <circle cx="270" cy="180" r="105" fill="none" stroke="#2D7464" stroke-width="1.5" stroke-dasharray="4 6" stroke-opacity="0.35"/>
+
+  <!-- Tarjeta de agenda / cita organizada -->
+  <g id="agenda-card" filter="url(#soft-shadow)">
+    <rect x="68" y="76" width="176" height="206" rx="16" fill="#DDEEE4"/>
+    <rect x="60" y="68" width="176" height="206" rx="16" fill="#FFFFFF" stroke="#2D7464" stroke-width="2.5"/>
+    <!-- Cabecera de la tarjeta -->
+    <path d="M 60 84 A 16 16 0 0 1 76 68 L 220 68 A 16 16 0 0 1 236 84 L 236 114 L 60 114 Z" fill="#235E50"/>
+    <!-- Anillas de calendario -->
+    <rect x="94" y="58" width="10" height="20" rx="5" fill="#D59172"/>
+    <rect x="192" y="58" width="10" height="20" rx="5" fill="#D59172"/>
+    <rect x="116" y="86" width="64" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.95"/>
+    <circle cx="96" cy="90" r="4" fill="#D59172"/>
+
+    <!-- Fila 1 de horario -->
+    <rect x="78" y="130" width="140" height="30" rx="8" fill="#FBF4E6"/>
+    <circle cx="94" cy="145" r="5" fill="#2D7464" fill-opacity="0.4"/>
+    <rect x="108" y="142" width="76" height="6" rx="3" fill="#235E50" fill-opacity="0.4"/>
+    <rect x="192" y="142" width="16" height="6" rx="3" fill="#D59172" fill-opacity="0.7"/>
+
+    <!-- Fila 2: Turno seleccionado -->
+    <rect x="78" y="170" width="140" height="36" rx="10" fill="#173F37"/>
+    <circle cx="94" cy="188" r="6" fill="#D59172"/>
+    <rect x="110" y="182" width="82" height="6" rx="3" fill="#FFFFFF"/>
+    <rect x="110" y="192" width="50" height="4" rx="2" fill="#DDEEE4"/>
+    <path d="M 200 188 L 204 192 L 212 184" fill="none" stroke="#DDEEE4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Fila 3 de horario -->
+    <rect x="78" y="216" width="140" height="30" rx="8" fill="#FBF4E6"/>
+    <circle cx="94" cy="231" r="5" fill="#2D7464" fill-opacity="0.4"/>
+    <rect x="108" y="228" width="68" height="6" rx="3" fill="#235E50" fill-opacity="0.4"/>
+  </g>
+
+  <!-- Silueta de diente editorial estilizado -->
+  <g id="diente-editorial" filter="url(#soft-shadow)">
+    <!-- Capa de sombra suave posterior -->
+    <path d="M 368 88 C 354 88 344 76 336 76 C 318 76 306 94 306 122 C 306 140 314 154 322 158 C 316 178 318 204 326 226 C 328 232 335 230 338 224 C 344 206 346 188 354 176 C 358 170 372 170 376 176 C 384 188 386 206 392 224 C 395 230 402 232 404 226 C 412 204 414 178 408 158 C 416 154 424 140 424 122 C 424 94 412 76 394 76 C 386 76 376 88 368 88 Z" fill="#DDEEE4"/>
+    <!-- Cuerpo principal -->
+    <path d="M 364 82 C 350 82 340 70 332 70 C 314 70 302 88 302 116 C 302 134 310 148 318 152 C 312 172 314 198 322 220 C 324 226 331 224 334 218 C 340 200 342 182 350 170 C 354 164 368 164 372 170 C 380 182 382 200 388 218 C 391 224 398 226 400 220 C 408 198 410 172 404 152 C 412 148 420 134 420 116 C 420 88 408 70 390 70 C 382 70 372 82 364 82 Z" fill="#FFFFFF" stroke="#173F37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Sombras interiores sutiles y reflejo -->
+    <path d="M 334 156 C 326 174 328 194 332 214 C 333 216 336 215 337 212 C 342 198 344 184 350 172 Z" fill="#DDEEE4" fill-opacity="0.8"/>
+    <path d="M 396 86 C 406 96 408 108 408 120" fill="none" stroke="#2D7464" stroke-width="2" stroke-linecap="round" stroke-opacity="0.45"/>
+    <path d="M 352 126 C 360 132 370 132 378 126" fill="none" stroke="#2D7464" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Insignia flotante: Cita a tiempo en Lima -->
+  <g id="badge-atencion" filter="url(#soft-shadow)">
+    <rect x="238" y="246" width="190" height="48" rx="24" fill="#FFFFFF" stroke="#2D7464" stroke-width="1.75"/>
+    <circle cx="264" cy="270" r="15" fill="#EAF1E8"/>
+    <path d="M 258 270 L 262 274 L 270 266" fill="none" stroke="#235E50" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="288" y="266" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#173F37">CITA CONFIRMADA</text>
+    <text x="288" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#536B61">Horario de Lima</text>
+  </g>
+
+  <!-- Elementos botánicos y acentos de serenidad -->
+  <g id="elementos-calma">
+    <!-- Rama botánica estilizada -->
+    <path d="M 454 274 C 472 260 482 236 484 204" fill="none" stroke="#2D7464" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="470" cy="244" rx="10" ry="5.5" transform="rotate(-35 470 244)" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+    <ellipse cx="484" cy="216" rx="9" ry="4.5" transform="rotate(25 484 216)" fill="#D59172" stroke="#2D7464" stroke-width="1.5"/>
+    <ellipse cx="482" cy="190" rx="9" ry="5" transform="rotate(-40 482 190)" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+
+    <!-- Destellos editoriales cálidos -->
+    <path d="M 450 78 Q 450 88 460 88 Q 450 88 450 98 Q 450 88 440 88 Q 450 88 450 78 Z" fill="#D59172"/>
+    <path d="M 284 56 Q 284 64 292 64 Q 284 64 284 72 Q 284 64 276 64 Q 284 64 284 56 Z" fill="#2D7464" fill-opacity="0.8"/>
+    <circle cx="48" cy="180" r="4.5" fill="#D59172"/>
+    <circle cx="282" cy="308" r="3.5" fill="#2D7464" fill-opacity="0.5"/>
+    <circle cx="480" cy="130" r="4" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+  </g>
+</svg>

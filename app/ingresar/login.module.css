@@ -1,0 +1,43 @@
+.login {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 6vw, 4rem) .85rem;
+  background: #f2f5ed;
+  color: #18352e;
+}
+.frame { width: min(100%, 29rem); }
+.back { color: #245c4f; display: inline-flex; margin-bottom: 1rem; font-weight: 650; }
+.paper {
+  padding: clamp(1.15rem, 5vw, 2rem);
+  background: #fffcf6;
+  border: 1px solid #d2dfd6;
+  border-radius: 1rem;
+}
+.mark {
+  display: grid; place-items: center; width: 2.4rem; height: 2.4rem;
+  background: #e5f1e6; border-radius: 50%; color: #245c4f; font-weight: 700;
+}
+.paper h1 { font-size: clamp(1.7rem, 6vw, 2.55rem); letter-spacing: -.05em; line-height: 1.12; margin: .75rem 0 .45rem; }
+.paper p { margin: 0; color: #425c50; }
+.form { display: grid; gap: .9rem; margin-top: 1.2rem; }
+.field { display: grid; gap: .3rem; font-weight: 650; }
+.field input {
+  min-height: 2.7rem; width: 100%; border: 1px solid #a8bcaf; border-radius: .55rem;
+  padding: .55rem .7rem; background: #fffdf9; color: #18352e; font: inherit; font-weight: 450;
+}
+.button {
+  min-height: 2.75rem; padding: .55rem .75rem; color: #fff; background: #245c4f;
+  border: 0; border-radius: .55rem; cursor: pointer; font: inherit; font-weight: 700;
+}
+.button:disabled { opacity: .5; cursor: wait; }
+.login :is(a, input, summary, button):focus-visible { outline: 2px solid #245c4f; outline-offset: 3px; }
+.options { margin-top: 1rem; border-top: 1px solid #d2dfd6; }
+.options summary { cursor: pointer; padding-block: .7rem; color: #245c4f; font-weight: 650; }
+.options p { font-size: .9rem; }
+.roles { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; }
+.roles button {
+  min-height: 2.5rem; padding: .4rem .6rem; background: #e5f1e6; color: #18352e;
+  border: 0; border-radius: .45rem; cursor: pointer; font: inherit;
+}
+.paper .error { color: #832e24; background: #faebe5; padding: .65rem .8rem; border-radius: .55rem; }

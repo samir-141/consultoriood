@@ -35,3 +35,7 @@ Orca registra los resultados de los trabajadores de ADE-005 y ADE-006. Los mensa
 1. Acordar con el consultorio cancelaciones, no-show, depósitos y el evento que confirma una reserva ordinaria.
 2. Validar permisos, auditoría y retención antes de implementar autenticación, relaciones clínicas o el esquema definitivo.
 3. Mantener a GPT a cargo de los registros en la carpeta principal. Incorporar la evidencia de cada trabajador y contrastar sus cambios antes de integrar.
+
+## Versión 1.0.1
+
+GPT coordinó el run `run_eb6555b3c912`. Antigravity entregó la landing y sus ilustraciones en `6295d1a`. OpenCode 2 entregó las vistas de clínica y pagos en `7130936`. Claude carecía de sesión y el modelo gratuito de OpenCode alcanzó su límite. Tareas de Codex sustituyeron esas asignaciones y verificaron los contratos entre interfaz y servidor. [Recorridos y pruebas](../README.md)

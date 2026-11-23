@@ -6,6 +6,7 @@
 /next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
+/.dental-local/
 
 # Local configuration and secrets
 .env*

@@ -107,3 +107,11 @@ Actualizado el 2026-11-23. Las dependencias se refieren a los identificadores de
 - **Alcance.** Reserva en tres pasos, preferencia de profesional opcional, filtros y acciones secundarias bajo demanda, ilustraciones SVG y transiciones que respetan la preferencia de movimiento reducido.
 - **Verificación.** Se probó la reserva, la reprogramación con motivo, la cancelación, los bloqueos y el borrador clínico. Se revisó el diseño en móvil y escritorio y se comprobó la desactivación de las animaciones con movimiento reducido.
 - **Entrega.** [Prototipo navegable](../docs/design/wireframes.html) · [Ilustración de reserva](../docs/design/assets/booking-calm.svg) · [Ilustración de confirmación](../docs/design/assets/booking-confirmed.svg)
+
+## ADE-011 · Construir la aplicación web local 1.0.1
+
+- **Estado.** Versión local funcional. Recorridos con datos de demostración y persistencia en PostgreSQL embebido.
+- **Alcance.** Landing, catálogo, reserva y enlace de gestión, agenda, pacientes, clínica, pagos, auditoría y simulación de mensajes.
+- **Responsables.** GPT coordinó, implementó la base y verificó la integración. Antigravity aportó la landing y los SVG. OpenCode 2 implementó los paneles de clínica y pagos. Codex completó la reserva, la agenda y la integración clínica y de pagos.
+- **Verificación.** Tipos, lint, compilación y prueba de integración reproducible en `npm run verify`. [Arranque](../README.md)
+- **Pendiente para producción.** Datos oficiales, políticas del consultorio, Supabase y credenciales para WhatsApp.

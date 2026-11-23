@@ -1,6 +1,6 @@
 # Estado actual
 
-**Corte del 2026-11-23.** La base local de la aplicación está integrada. El diseño de agenda, acceso clínico y pagos sigue en validación.
+**Corte del 2026-11-23.** La versión web local 1.0.1 está integrada y lista para evaluación con datos de ejemplo. La configuración y las políticas del consultorio siguen en validación.
 
 ## Línea base
 
@@ -10,6 +10,7 @@
 - El repositorio local tiene línea base en `5a3edf4` y worktrees de Orca para ADE-005 y ADE-006. La integración local contiene agenda (`6f75a0c`) y la base Next.js (`6ea2862`).
 - La base ejecutable incluye Next.js App Router, TypeScript estricto, Tailwind, una página de arranque en español y scripts reproducibles. Se verificó en Windows con Node.js `v26.12.1` y npm `11.20.0`. [README](../README.md) · [Informe de ADE-005](../reports/ade-005-verification.md)
 - El prototipo HTML permite revisar la reserva, la agenda de recepción y la vista del odontólogo con datos sintéticos. Las simulaciones se ejecutan en memoria en el navegador. [Prototipo](../docs/design/wireframes.html)
+- La aplicación 1.0.1 conecta la landing, reservas, enlace de gestión, agenda, pacientes, clínica y pagos con persistencia local. La cola de WhatsApp sirve para simular confirmaciones y recordatorios con los datos del entorno de prueba. [Arranque y recorridos](../README.md)
 
 ## Agentes y modelos
 
@@ -33,7 +34,7 @@
 | Base integrada | `npm.cmd ci --no-audit --no-fund`, tipos, lint, build y prueba HTTP de producción. npm advierte que ESLint 9.39.5 está fuera de soporte. |
 | Prototipo ADE-009 | Se verificaron en Orca el vencimiento y la confirmación de una reserva, la reprogramación con motivo, la cancelación, los bloqueos de agenda y el borrador clínico. Las tres vistas se probaron a 390 px. |
 | Experiencia ADE-010 | Reserva en tres pasos y acciones secundarias bajo demanda. Antigravity entregó dos SVG originales. Se comprobó la navegación y la preferencia de movimiento reducido. |
-| Pruebas del MVP | Concurrencia PostgreSQL, permisos, aislamiento, restauración y E2E pendientes de sus implementaciones. |
+| Verificación 1.0.1 | `npm run verify` prueba concurrencia y vencimiento de turnos, reprogramación, persistencia, permisos clínicos y pagos en PostgreSQL embebido. Las pruebas de despliegue, restauración operativa y envío real requieren el entorno de producción. |
 
 ## Riesgos y decisiones abiertas
 

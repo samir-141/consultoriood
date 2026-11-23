@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="100%" height="100%" role="img" aria-label="Ilustración editorial de ubicación y horario de demostración: Lima, Perú y Lun–Sáb 09:00–17:00">
+  <defs>
+    <linearGradient id="vis-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FBF4E6"/>
+      <stop offset="100%" stop-color="#F2EAE0"/>
+    </linearGradient>
+    <filter id="vis-shadow" x="-8%" y="-8%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#173F37" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <rect width="480" height="320" rx="20" fill="url(#vis-bg)"/>
+  <rect x="14" y="14" width="452" height="292" rx="16" fill="none" stroke="#DDEEE4" stroke-width="1.5"/>
+  <circle cx="240" cy="160" r="115" fill="#DDEEE4" fill-opacity="0.38"/>
+
+  <!-- Tarjeta de Horario Editorial -->
+  <g id="tarjeta-horario" filter="url(#vis-shadow)">
+    <rect x="60" y="66" width="170" height="190" rx="14" fill="#FFFFFF" stroke="#2D7464" stroke-width="2"/>
+    <rect x="60" y="66" width="170" height="36" rx="14" fill="#235E50"/>
+    <text x="80" y="89" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#FFFFFF">HORARIO DEMO</text>
+
+    <!-- Reloj estilizado -->
+    <circle cx="145" cy="140" r="26" fill="#FBF4E6" stroke="#173F37" stroke-width="2"/>
+    <circle cx="145" cy="140" r="3" fill="#D59172"/>
+    <line x1="145" y1="140" x2="145" y2="124" stroke="#173F37" stroke-width="2" stroke-linecap="round"/>
+    <line x1="145" y1="140" x2="158" y2="140" stroke="#173F37" stroke-width="2" stroke-linecap="round"/>
+
+    <text x="76" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#173F37">Lun – Sáb</text>
+    <text x="76" y="208" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#235E50">09:00 – 17:00</text>
+    <text x="76" y="226" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="500" fill="#536B61">Domingos: Cerrado</text>
+  </g>
+
+  <!-- Tarjeta de Ubicación: Lima, Perú -->
+  <g id="tarjeta-ubicacion" filter="url(#vis-shadow)">
+    <rect x="250" y="66" width="170" height="190" rx="14" fill="#FFFFFF" stroke="#2D7464" stroke-width="2"/>
+    <rect x="250" y="66" width="170" height="36" rx="14" fill="#173F37"/>
+    <text x="274" y="89" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#FFFFFF">UBICACIÓN DEMO</text>
+
+    <!-- Pin de mapa editorial -->
+    <g transform="translate(335, 140)">
+      <circle cx="0" cy="8" r="16" fill="#DDEEE4"/>
+      <path d="M 0 -22 C -11 -22 -18 -15 -18 -4 C -18 7 0 22 0 22 C 0 22 18 7 18 -4 C 18 -15 11 -22 0 -22 Z" fill="#D59172" stroke="#173F37" stroke-width="1.8"/>
+      <circle cx="0" cy="-6" r="6" fill="#FFFFFF"/>
+    </g>
+
+    <text x="270" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#173F37">Lima, Perú</text>
+    <text x="270" y="208" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#536B61">Sede de demostración</text>
+    <rect x="268" y="220" width="134" height="22" rx="6" fill="#EAF1E8"/>
+    <text x="280" y="235" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="600" fill="#235E50">Atención bajo reserva</text>
+  </g>
+
+  <!-- Acentos decorativos -->
+  <path d="M 240 50 Q 240 58 248 58 Q 240 58 240 66 Q 240 58 232 58 Q 240 58 240 50 Z" fill="#D59172"/>
+  <circle cx="44" cy="270" r="4.5" fill="#2D7464" fill-opacity="0.4"/>
+  <circle cx="436" cy="50" r="4" fill="#D59172"/>
+</svg>

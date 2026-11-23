@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 280" width="100%" height="100%" role="img" aria-label="Ilustración editorial de reserva calmada con calendario y diente">
+  <!-- Fondo integrado y marco contenido -->
+  <g id="calm-background">
+    <rect width="440" height="280" rx="18" fill="#FBF4E6"/>
+    <rect x="14" y="14" width="412" height="252" rx="14" fill="none" stroke="#DDEEE4" stroke-width="1.5"/>
+    <circle cx="220" cy="140" r="88" fill="#DDEEE4" fill-opacity="0.45"/>
+    <path d="M 148 140 A 72 72 0 0 1 292 140" fill="none" stroke="#2D7464" stroke-width="1.5" stroke-dasharray="3 5" stroke-opacity="0.45"/>
+  </g>
+
+  <!-- Tarjeta de calendario editorial (orientación de fecha y turno) -->
+  <g id="calm-calendar-card">
+    <rect x="106" y="66" width="126" height="148" rx="14" fill="#DDEEE4"/>
+    <rect x="100" y="60" width="126" height="148" rx="14" fill="#FBF4E6" stroke="#2D7464" stroke-width="2.5"/>
+    <path d="M 100 74 A 14 14 0 0 1 114 60 L 212 60 A 14 14 0 0 1 226 74 L 226 96 L 100 96 Z" fill="#2D7464"/>
+    <rect x="126" y="52" width="8" height="16" rx="4" fill="#D59172"/>
+    <rect x="192" y="52" width="8" height="16" rx="4" fill="#D59172"/>
+    <rect x="142" y="75" width="42" height="6" rx="3" fill="#FBF4E6" fill-opacity="0.9"/>
+
+    <rect x="114" y="110" width="98" height="20" rx="6" fill="#DDEEE4" fill-opacity="0.6"/>
+    <circle cx="125" cy="120" r="3.5" fill="#2D7464" fill-opacity="0.5"/>
+    <rect x="135" y="118" width="56" height="4" rx="2" fill="#2D7464" fill-opacity="0.35"/>
+
+    <rect x="114" y="138" width="98" height="24" rx="7" fill="#173F37"/>
+    <circle cx="126" cy="150" r="4.5" fill="#D59172"/>
+    <rect x="138" y="148" width="60" height="5" rx="2.5" fill="#DDEEE4"/>
+
+    <rect x="114" y="170" width="98" height="20" rx="6" fill="#DDEEE4" fill-opacity="0.6"/>
+    <circle cx="125" cy="180" r="3.5" fill="#2D7464" fill-opacity="0.5"/>
+    <rect x="135" y="178" width="46" height="4" rx="2" fill="#2D7464" fill-opacity="0.35"/>
+  </g>
+
+  <!-- Diente de curvas suaves y estilo editorial -->
+  <g id="calm-tooth">
+    <path d="M 276 92 C 266 92 258 82 252 82 C 238 82 230 96 230 118 C 230 132 236 142 242 146 C 238 162 240 182 246 200 C 248 204 253 203 256 198 C 261 184 262 170 268 160 C 271 154 281 154 284 160 C 290 170 291 184 296 198 C 299 203 304 204 306 200 C 312 182 314 162 310 146 C 316 142 322 132 322 118 C 322 96 314 82 300 82 C 294 82 286 92 276 92 Z" fill="#DDEEE4"/>
+    <path d="M 272 88 C 262 88 254 78 248 78 C 234 78 226 92 226 114 C 226 128 232 138 238 142 C 234 158 236 178 242 196 C 244 200 249 199 252 194 C 257 180 258 166 264 156 C 267 150 277 150 280 156 C 286 166 287 180 292 194 C 295 199 300 200 302 196 C 308 178 310 158 306 142 C 312 138 318 128 318 114 C 318 92 310 78 296 78 C 290 78 282 88 272 88 Z" fill="#FBF4E6" stroke="#173F37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 248 148 C 242 162 244 178 248 194 C 249 196 251 195 252 193 C 256 182 258 170 263 160 Z" fill="#DDEEE4" fill-opacity="0.7"/>
+    <path d="M 298 90 C 306 98 308 108 308 118" fill="none" stroke="#2D7464" stroke-width="2" stroke-linecap="round" stroke-opacity="0.45"/>
+    <path d="M 262 122 C 268 127 276 127 282 122" fill="none" stroke="#2D7464" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Acentos de orientación, bienestar y calma -->
+  <g id="calm-accents">
+    <path d="M 72 108 C 64 138 68 172 82 198" fill="none" stroke="#2D7464" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 5"/>
+    <circle cx="82" cy="198" r="4.5" fill="#D59172"/>
+
+    <path d="M 338 206 C 352 194 360 174 362 148" fill="none" stroke="#2D7464" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="352" cy="180" rx="9" ry="4.5" transform="rotate(-35 352 180)" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+    <ellipse cx="363" cy="158" rx="8" ry="4" transform="rotate(25 363 158)" fill="#D59172" stroke="#2D7464" stroke-width="1.5"/>
+    <ellipse cx="360" cy="138" rx="8" ry="4" transform="rotate(-40 360 138)" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+
+    <path d="M 338 68 Q 338 76 346 76 Q 338 76 338 84 Q 338 76 330 76 Q 338 76 338 68 Z" fill="#D59172"/>
+
+    <circle cx="218" cy="42" r="3.5" fill="#D59172"/>
+    <circle cx="94" cy="74" r="3" fill="#2D7464" fill-opacity="0.45"/>
+    <circle cx="378" cy="104" r="3.5" fill="#DDEEE4" stroke="#2D7464" stroke-width="1.5"/>
+  </g>
+</svg>
