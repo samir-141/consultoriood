@@ -16,7 +16,7 @@
 - [x] Línea base Git y espacios aislados en Orca.
 - [x] Base de Next.js con instalación reproducible, tipos, lint, build y arranque comprobados.
 - [x] Diseño de concurrencia, vencimiento y reprogramación de agenda revisado e integrado.
-- [x] [Prototipo navegable de reserva, agenda y ficha clínica](design/wireframes.html) con datos sintéticos.
+- [x] [Prototipo navegable de reserva, agenda y ficha clínica](design/wireframes.html) con datos sintéticos, reserva guiada y acciones secundarias bajo demanda.
 
 ## En curso
 

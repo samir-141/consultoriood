@@ -98,3 +98,12 @@ Actualizado el 2026-11-23. Las dependencias se refieren a los identificadores de
 - **Archivos.** [Wireframes navegables](../docs/design/wireframes.html).
 - **Dependencias.** ADE-006 y la propuesta de alcance clínico de ADE-007. Las políticas definitivas se validan en las tareas correspondientes.
 - **Verificación.** Confirmación y vencimiento de reserva, reprogramación con motivo, cancelación, bloqueo, filtros de agenda y borrador de atención probados en el navegador de Orca. Revisión de las tres vistas a 390 px.
+
+## ADE-010 · Simplificar la experiencia del prototipo
+
+- **Estado.** Completada en el prototipo. Sigue pendiente la revisión del flujo con usuarios del consultorio.
+- **Objetivo.** Dar al paciente una decisión por paso y mantener a mano las acciones frecuentes de recepción y odontología.
+- **Responsable.** GPT diseñó e integró el flujo. Antigravity creó las ilustraciones SVG en el commit `58311da` y reportó el resultado en el despacho Orca `ctx_e2e0ed03ec82`.
+- **Alcance.** Reserva en tres pasos, preferencia de profesional opcional, filtros y acciones secundarias bajo demanda, ilustraciones SVG y transiciones que respetan la preferencia de movimiento reducido.
+- **Verificación.** Se probó la reserva, la reprogramación con motivo, la cancelación, los bloqueos y el borrador clínico. Se revisó el diseño en móvil y escritorio y se comprobó la desactivación de las animaciones con movimiento reducido.
+- **Entrega.** [Prototipo navegable](../docs/design/wireframes.html) · [Ilustración de reserva](../docs/design/assets/booking-calm.svg) · [Ilustración de confirmación](../docs/design/assets/booking-confirmed.svg)

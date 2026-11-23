@@ -32,6 +32,7 @@
 | Git y Orca | Línea base, worktrees, ramas y resultados de los trabajadores contrastados. |
 | Base integrada | `npm.cmd ci --no-audit --no-fund`, tipos, lint, build y prueba HTTP de producción. npm advierte que ESLint 9.39.5 está fuera de soporte. |
 | Prototipo ADE-009 | Se verificaron en Orca el vencimiento y la confirmación de una reserva, la reprogramación con motivo, la cancelación, los bloqueos de agenda y el borrador clínico. Las tres vistas se probaron a 390 px. |
+| Experiencia ADE-010 | Reserva en tres pasos y acciones secundarias bajo demanda. Antigravity entregó dos SVG originales. Se comprobó la navegación y la preferencia de movimiento reducido. |
 | Pruebas del MVP | Concurrencia PostgreSQL, permisos, aislamiento, restauración y E2E pendientes de sus implementaciones. |
 
 ## Riesgos y decisiones abiertas

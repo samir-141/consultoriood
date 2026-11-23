@@ -9,66 +9,92 @@
     [hidden] { display: none !important; }
     body {
       margin: 0;
-      background: var(--background, #f3f4ef);
-      color: var(--foreground, #182322);
+      background: var(--background, #f6f5ee);
+      color: var(--foreground, #18352e);
       font: 16px/1.5 var(--font-sans, system-ui, sans-serif);
-      --line: var(--border, #d8ded8);
-      --soft: var(--muted, #e8eeea);
-      --subtle: var(--muted-foreground, #465954);
-      --paper: var(--card, #fff);
-      --ink: var(--card-foreground, #182322);
-      --action: var(--primary, #185c50);
+      --line: var(--border, #d8e0d5);
+      --soft: var(--muted, #eaf1e8);
+      --subtle: var(--muted-foreground, #4b6257);
+      --paper: var(--card, #fffcf6);
+      --ink: var(--card-foreground, #18352e);
+      --action: var(--primary, #235e50);
       --action-text: var(--primary-foreground, #fff);
     }
-    .frame { width: min(100% - 2rem, 68rem); margin: 0 auto; padding: 1.5rem 0 2rem; }
-    .masthead, .actions, .heading-row {
+    .frame { width: min(100% - 2.5rem, 64rem); margin: 0 auto; padding: 1.25rem 0 2rem; }
+    .masthead, .heading-row {
       display: flex; align-items: center; gap: .65rem; flex-wrap: wrap;
     }
     .masthead, .heading-row { justify-content: space-between; }
-    .masthead { border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
-    .brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 700; }
+    .masthead { border-bottom: 1px solid var(--line); padding-bottom: .8rem; }
+    .brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 650; }
     .brand-mark {
-      display: grid; place-items: center; width: 2rem; aspect-ratio: 1;
-      border-radius: .55rem; background: var(--action); color: var(--action-text);
+      display: grid; place-items: center; width: 2rem; height: 2rem;
+      border-radius: 50%; background: var(--soft); color: var(--ink);
     }
-    nav { display: flex; flex-wrap: wrap; gap: .35rem; }
-    nav button { border-color: transparent; background: transparent; }
-    nav button[aria-pressed="true"] { background: var(--action); color: var(--action-text); }
-    .intro { margin: 1.4rem 0 1.2rem; }
+    .view-switch { position: relative; }
+    .view-switch summary { padding: .45rem 0 .45rem .45rem; }
+    .view-switch nav {
+      position: absolute; z-index: 1; inset: calc(100% + .25rem) 0 auto auto;
+      min-width: 12rem; display: grid; padding: .35rem; gap: .2rem;
+      background: var(--paper); color: var(--ink); border: 1px solid var(--line);
+      border-radius: .75rem; box-shadow: 0 8px 24px #132b221a;
+    }
+    .view-switch button { border: 0; text-align: left; }
+    .view-switch button[aria-pressed="true"] { background: var(--soft); color: var(--ink); }
+    summary { min-height: 2.75rem; padding: .55rem 0; cursor: pointer; font-weight: 600; }
+    summary::marker { color: var(--subtle); }
+    details > :not(summary):first-of-type { margin-top: .4rem; }
+    .intro { margin: clamp(1.2rem, 5vw, 2.7rem) 0 1.4rem; }
     .intro p, p { margin: .55rem 0 0; }
     h1, h2, h3, h4 { line-height: 1.18; margin: 0; }
-    h1 { font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -.045em; }
-    h2 { font-size: 1.22rem; letter-spacing: -.018em; }
+    h1 { font-size: clamp(2rem, 6vw, 3.55rem); letter-spacing: -.055em; font-weight: 675; }
+    h2 { font-size: clamp(1.3rem, 2.5vw, 1.7rem); letter-spacing: -.025em; }
     h3 { font-size: 1rem; }
     .muted, .help, dt { color: var(--subtle); }
     .help { font-size: .875rem; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
     .card {
       min-width: 0; padding: clamp(1rem, 3vw, 1.45rem);
       background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 1rem;
     }
+    .booking-grid { align-items: stretch; }
+    .booking-card { padding: clamp(1.2rem, 4vw, 2rem); border-radius: 1.25rem; }
+    .booking-card .primary { width: min(100%, 16rem); }
+    .progress-label { margin: 0 0 .5rem; color: var(--subtle); font-size: .84rem; font-weight: 650; }
+    .step-meter {
+      display: block; width: 5.5rem; height: .25rem; border: 0; border-radius: 1rem;
+      margin: 0 0 1.25rem; background: var(--soft); color: var(--action); accent-color: var(--action);
+    }
+    .step-meter::-webkit-progress-bar { background: var(--soft); border-radius: 1rem; }
+    .step-meter::-webkit-progress-value { background: var(--action); border-radius: 1rem; }
+    .stage-enter { animation: stage-enter 210ms ease-out both; }
+    @keyframes stage-enter { from { opacity: .7; transform: translateY(.3rem); } to { opacity: 1; transform: none; } }
+    .booking-art {
+      margin: 0; display: grid; place-items: center; min-width: 0; border-radius: 1.25rem;
+      padding: clamp(.85rem, 3vw, 1.75rem);
+      background: var(--soft); border: 1px solid var(--line);
+    }
+    .booking-art img { display: block; width: 100%; max-width: 27.5rem; height: auto; aspect-ratio: 11 / 7; object-fit: contain; }
+    #illustration-confirmed { animation: confirmation-arrive 310ms ease-out both; }
+    @keyframes confirmation-arrive { from { opacity: .65; transform: scale(.96); } to { opacity: 1; transform: none; } }
     .stack > * + * { margin-top: 1rem; }
     .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
-    label, legend { font-weight: 650; }
-    fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-    legend { padding: 0; margin-bottom: .55rem; }
+    label { display: block; font-weight: 650; }
     select, textarea { display: block; width: 100%; margin-top: .35rem; }
     button, select, textarea {
       font: inherit; color: inherit; border: 1px solid var(--line); border-radius: .55rem;
-      background: var(--paper); min-height: 2.65rem; padding: .45rem .75rem;
+      background: var(--paper); min-height: 2.75rem; padding: .5rem .75rem;
     }
     textarea { resize: vertical; }
-    button { cursor: pointer; font-weight: 650; }
+    button { cursor: pointer; font-weight: 650; transition: background-color 140ms ease, color 140ms ease; }
     button:hover:not(:disabled) { background: var(--accent, #e0ebe5); color: var(--accent-foreground, #163e35); }
-    button:focus-visible, select:focus-visible, textarea:focus-visible {
+    button:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
       outline: 2px solid var(--ring, #236e61); outline-offset: 2px;
     }
     button:disabled { opacity: .55; cursor: default; }
     .primary { background: var(--action); color: var(--action-text); border-color: transparent; }
-    .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: .5rem; }
-    .choices button[aria-pressed="true"], .toggle[aria-pressed="true"] {
-      background: var(--action); color: var(--action-text); border-color: transparent;
-    }
+    .quiet { border-color: transparent; background: transparent; color: var(--ink); padding-inline: .25rem; }
+    .review-summary { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1rem; }
     dl { margin: 0; }
     dl div { padding: .6rem 0; border-bottom: 1px solid var(--line); }
     dt { font-size: .875rem; }
@@ -86,17 +112,25 @@
       display: inline-block; width: fit-content; padding: .12rem .45rem; font-size: .8rem;
       font-weight: 650; border-radius: .35rem; background: var(--soft); color: var(--ink);
     }
-    .clinical-nav { border-bottom: 1px solid var(--line); padding-bottom: .6rem; }
+    .context-select { display: block; max-width: 20rem; }
     .clinical-panel { padding-top: 1rem; }
     .record { margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .55rem; }
-    ul { margin: .6rem 0 0; padding-left: 1.25rem; }
     #saved-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+    #agenda-detail { margin-top: 1rem; }
+    .demo-note { margin-top: 1.3rem; color: var(--subtle); font-size: .85rem; }
     @media (max-width: 44rem) {
       .grid, .agenda-columns { grid-template-columns: 1fr; }
+      .booking-art { justify-self: center; width: min(100%, 24rem); }
+      .booking-art img { max-width: 16rem; }
     }
     @media (max-width: 26rem) {
       .two { grid-template-columns: 1fr; }
-      .frame { width: calc(100% - 1rem); }
+      .frame { width: calc(100% - 1.5rem); }
+      .booking-card .primary { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      button { transition: none; }
+      .stage-enter, #illustration-confirmed { animation: none; }
     }
   </style>
 </head>
@@ -104,79 +138,89 @@
   <div class="frame">
     <header class="masthead">
       <div class="brand"><span class="brand-mark" aria-hidden="true">+</span> Consultorio dental</div>
-      <nav aria-label="Vistas del prototipo">
-        <button type="button" data-view="booking" aria-pressed="true">Reserva</button>
-        <button type="button" data-view="agenda" aria-pressed="false">Agenda</button>
-        <button type="button" data-view="clinical" aria-pressed="false">Ficha clínica</button>
-      </nav>
+      <details id="view-switch" class="view-switch">
+        <summary>Cambiar vista</summary>
+        <nav aria-label="Vistas del prototipo">
+          <button type="button" data-view="booking" aria-pressed="true">Reserva del paciente</button>
+          <button type="button" data-view="agenda" aria-pressed="false">Agenda de recepción</button>
+          <button type="button" data-view="clinical" aria-pressed="false">Ficha clínica</button>
+        </nav>
+      </details>
     </header>
 
     <main>
       <section id="booking" aria-labelledby="booking-title">
         <header class="intro">
-          <h1 id="booking-title" tabindex="-1">Reserva una cita</h1>
-          <p class="muted">Selecciona el servicio y el horario para una reserva de ejemplo.</p>
+          <h1 id="booking-title" tabindex="-1">Reserva tu cita</h1>
+          <p class="muted">Elige el servicio y encuentra un horario que te acomode.</p>
         </header>
-        <div class="grid">
-          <div id="booking-picker" class="card stack">
-            <h2 tabindex="-1">Elige tu turno</h2>
-            <div class="two">
+        <div class="grid booking-grid">
+          <div class="card booking-card">
+            <p id="booking-progress-label" class="progress-label">Paso 1 de 3 · Servicio</p>
+            <progress id="booking-progress" class="step-meter" max="3" value="1" aria-label="Progreso de la reserva"></progress>
+
+            <div id="booking-service" class="stack">
+              <h2 tabindex="-1">¿Qué servicio necesitas?</h2>
               <label>Servicio
-                <select id="service">
+                <select id="service" aria-describedby="service-meta">
                   <option value="evaluation">Evaluación dental</option>
                   <option value="cleaning">Limpieza dental</option>
                 </select>
               </label>
-              <label>Profesional
-                <select id="professional">
-                  <option value="any">Cualquier profesional</option>
-                  <option value="a">Odontóloga A</option>
-                  <option value="b">Odontólogo B</option>
-                </select>
-              </label>
+              <p id="service-meta" class="help"></p>
+              <details id="preference">
+                <summary>Preferencia de profesional</summary>
+                <label>Profesional
+                  <select id="professional">
+                    <option value="any">Cualquier profesional</option>
+                    <option value="a">Odontóloga A</option>
+                    <option value="b">Odontólogo B</option>
+                  </select>
+                </label>
+              </details>
+              <button id="show-slots" class="primary" type="button">Ver horarios</button>
             </div>
-            <fieldset>
-              <legend>Fecha</legend>
-              <div id="dates" class="choices"></div>
-            </fieldset>
-            <fieldset>
-              <legend>Hora en Lima</legend>
-              <div id="times" class="choices"></div>
-            </fieldset>
-            <p id="booking-feedback" class="notice" role="status"></p>
-            <button id="review-button" class="primary" type="button" disabled>Revisar reserva</button>
-          </div>
-          <div id="booking-review" class="card stack" hidden>
-            <h2 tabindex="-1">Confirma tu reserva</h2>
-            <p class="notice">El turno queda retenido por 10 minutos en esta simulación.</p>
-            <div>
-              <h3>Contacto de ejemplo</h3>
-              <p>Paciente Demo · paciente@example.test</p>
+
+            <div id="booking-picker" class="stack" hidden>
+              <h2 tabindex="-1">Elige la fecha y la hora</h2>
+              <p id="slot-service" class="help"></p>
+              <div class="two">
+                <label>Fecha <select id="booking-date"></select></label>
+                <label>Hora de Lima <select id="booking-time"></select></label>
+              </div>
+              <p id="booking-feedback" class="notice" role="status"></p>
+              <button id="review-button" class="primary" type="button" disabled>Revisar cita</button>
+              <button id="back-service" class="quiet" type="button">Volver al servicio</button>
             </div>
-            <div class="actions">
+
+            <div id="booking-review" class="stack" hidden>
+              <h2 tabindex="-1">Revisa tu cita</h2>
+              <dl class="review-summary">
+                <div><dt>Fecha y hora</dt><dd id="summary-time"></dd></div>
+                <div><dt>Servicio</dt><dd id="summary-service"></dd></div>
+                <div><dt>Profesional</dt><dd id="summary-professional"></dd></div>
+                <div><dt>Precio referencial</dt><dd id="summary-price"></dd></div>
+              </dl>
+              <p class="help">Contacto de ejemplo · paciente@example.test. El turno se retiene 10 minutos.</p>
               <button id="confirm-booking" class="primary" type="button">Confirmar cita</button>
-              <button id="back-booking" type="button">Cambiar turno</button>
-              <button id="expire-booking" type="button">Simular vencimiento</button>
+              <button id="back-booking" class="quiet" type="button">Cambiar horario</button>
+              <details id="booking-test">
+                <summary>Opciones de prueba</summary>
+                <button id="expire-booking" type="button">Simular vencimiento</button>
+              </details>
+            </div>
+
+            <div id="booking-success" class="stack" hidden>
+              <h2 tabindex="-1">Tu cita quedó confirmada</h2>
+              <p id="success-time"></p>
+              <p class="help">La reserva de ejemplo ya figura en la agenda del prototipo.</p>
+              <button id="new-booking" class="quiet" type="button">Reservar otra cita</button>
             </div>
           </div>
-          <div id="booking-success" class="card stack" hidden>
-            <h2 tabindex="-1">Cita de ejemplo confirmada</h2>
-            <p>La cita aparece ahora en la agenda del prototipo.</p>
-            <div class="actions">
-              <button class="primary" type="button" data-view="agenda">Ver en agenda</button>
-              <button id="new-booking" type="button">Elegir otro turno</button>
-            </div>
-          </div>
-          <aside class="card stack" aria-labelledby="summary-title">
-            <h2 id="summary-title">Resumen de la cita</h2>
-            <dl id="booking-summary">
-              <div><dt>Servicio</dt><dd id="summary-service"></dd></div>
-              <div><dt>Profesional</dt><dd id="summary-professional"></dd></div>
-              <div><dt>Fecha y hora</dt><dd id="summary-time"></dd></div>
-              <div><dt>Precio referencial de ejemplo</dt><dd id="summary-price"></dd></div>
-            </dl>
-            <p class="help">Prototipo con datos sintéticos. Los cambios duran hasta que recargues la página.</p>
-          </aside>
+          <figure class="booking-art" aria-hidden="true">
+            <img id="illustration-booking" src="assets/booking-calm.svg" width="440" height="280" alt="">
+            <img id="illustration-confirmed" src="assets/booking-confirmed.svg" width="440" height="280" alt="" hidden>
+          </figure>
         </div>
       </section>
 
@@ -187,53 +231,64 @@
         </header>
         <div class="card stack">
           <div class="heading-row">
-            <div class="actions">
-              <button class="toggle" type="button" data-mode="day" aria-pressed="true">Por día</button>
-              <button class="toggle" type="button" data-mode="week" aria-pressed="false">Semana de ejemplo</button>
-            </div>
-            <div class="actions">
-              <button id="agenda-new-booking" type="button" data-view="booking">Nueva cita de ejemplo</button>
-              <button id="block-open" class="primary" type="button">Bloquear turno</button>
-            </div>
+            <h2>Programación</h2>
+            <button id="agenda-new-booking" class="primary" type="button" data-view="booking">Nueva cita</button>
           </div>
-          <div class="two">
-            <label>Fecha <select id="agenda-date"></select></label>
-            <label>Profesional
-              <select id="agenda-professional">
-                <option value="any">Todos</option>
-                <option value="a">Odontóloga A</option>
-                <option value="b">Odontólogo B</option>
-              </select>
-            </label>
-          </div>
+          <details id="agenda-filters" class="stack">
+            <summary>Filtros y bloqueos</summary>
+            <div class="two">
+              <label>Periodo
+                <select id="agenda-mode">
+                  <option value="day">Por día</option>
+                  <option value="week">Semana de ejemplo</option>
+                </select>
+              </label>
+              <label id="agenda-date-field">Fecha <select id="agenda-date"></select></label>
+              <label>Profesional
+                <select id="agenda-professional">
+                  <option value="any">Todos</option>
+                  <option value="a">Odontóloga A</option>
+                  <option value="b">Odontólogo B</option>
+                </select>
+              </label>
+            </div>
+            <button id="block-open" type="button">Bloquear turno</button>
+          </details>
           <p id="agenda-feedback" class="notice" role="status"></p>
           <div id="agenda-days" class="agenda-columns" data-mode="day"></div>
         </div>
         <section id="agenda-detail" class="card stack" aria-labelledby="detail-title" hidden>
           <div class="heading-row">
             <h2 id="detail-title" tabindex="-1"></h2>
-            <button id="detail-close" type="button">Cerrar detalle</button>
+            <button id="detail-close" class="quiet" type="button">Cerrar</button>
           </div>
           <p id="detail-summary"></p>
           <div id="detail-actions" class="stack" hidden>
-            <label>Profesional
-              <select id="detail-professional">
-                <option value="a">Odontóloga A</option>
-                <option value="b">Odontólogo B</option>
-              </select>
-            </label>
-            <label>Turno disponible <select id="detail-slot"></select></label>
-            <label id="move-reason-field">Motivo de reprogramación
-              <select id="move-reason">
-                <option value="">Selecciona un motivo</option>
-                <option value="Solicitud del paciente">Solicitud del paciente</option>
-                <option value="Cambio de horario del consultorio">Cambio de horario del consultorio</option>
-              </select>
-            </label>
-            <div class="actions">
+            <button id="detail-edit" class="primary" type="button">Reprogramar cita</button>
+            <div id="detail-editor" class="stack">
+              <div class="two">
+                <label>Profesional
+                  <select id="detail-professional">
+                    <option value="a">Odontóloga A</option>
+                    <option value="b">Odontólogo B</option>
+                  </select>
+                </label>
+                <label>Turno disponible <select id="detail-slot"></select></label>
+              </div>
+              <label id="move-reason-field">Motivo de reprogramación
+                <select id="move-reason">
+                  <option value="">Selecciona un motivo</option>
+                  <option value="Solicitud del paciente">Solicitud del paciente</option>
+                  <option value="Cambio de horario del consultorio">Cambio de horario del consultorio</option>
+                </select>
+              </label>
               <button id="detail-save" class="primary" type="button"></button>
-              <button id="detail-cancel" type="button">Cancelar cita de ejemplo</button>
             </div>
+            <details id="detail-cancel-options">
+              <summary>Cancelar cita</summary>
+              <p class="help">El horario quedará disponible para otra reserva de ejemplo.</p>
+              <button id="detail-cancel" type="button">Confirmar cancelación</button>
+            </details>
           </div>
         </section>
       </section>
@@ -245,30 +300,35 @@
         </header>
         <div class="grid">
           <div class="card">
-            <nav class="clinical-nav" aria-label="Secciones de la ficha">
-              <button type="button" data-clinical="encounter" aria-pressed="true">Atención</button>
-              <button type="button" data-clinical="teeth" aria-pressed="false">Odontograma</button>
-              <button type="button" data-clinical="plan" aria-pressed="false">Plan</button>
-              <button type="button" data-clinical="files" aria-pressed="false">Adjuntos</button>
-            </nav>
+            <label class="context-select">Sección de la ficha
+              <select id="clinical-view">
+                <option value="encounter">Atención</option>
+                <option value="teeth">Odontograma</option>
+                <option value="plan">Plan de tratamiento</option>
+                <option value="files">Adjuntos</option>
+              </select>
+            </label>
             <section id="encounter" class="clinical-panel stack">
               <h2>Nota de atención</h2>
               <form id="note-form" class="stack">
-                <div class="two">
-                  <label>Motivo
-                    <textarea name="reason" rows="2" required placeholder="Ej. Control programado"></textarea>
-                  </label>
-                  <label>Hallazgos
-                    <textarea name="findings" rows="2" placeholder="Ej. Hallazgo simulado"></textarea>
-                  </label>
-                  <label>Procedimiento
-                    <textarea name="procedure" rows="2"></textarea>
-                  </label>
-                  <label>Indicaciones y próxima cita
-                    <textarea name="instructions" rows="2"></textarea>
-                  </label>
-                </div>
-                <button class="primary" type="submit">Guardar borrador de ejemplo</button>
+                <label>Motivo
+                  <textarea name="reason" rows="2" required placeholder="Ej. Control programado"></textarea>
+                </label>
+                <details class="stack">
+                  <summary>Más campos de la nota</summary>
+                  <div class="stack">
+                    <label>Hallazgos
+                      <textarea name="findings" rows="2" placeholder="Ej. Hallazgo simulado"></textarea>
+                    </label>
+                    <label>Procedimiento
+                      <textarea name="procedure" rows="2"></textarea>
+                    </label>
+                    <label>Indicaciones y próxima cita
+                      <textarea name="instructions" rows="2"></textarea>
+                    </label>
+                  </div>
+                </details>
+                <button class="primary" type="submit">Guardar borrador</button>
               </form>
               <p id="note-status" class="notice" role="status"></p>
               <div id="saved-note" class="record" hidden></div>
@@ -307,6 +367,7 @@
         </div>
       </section>
     </main>
+    <footer class="demo-note">Prototipo con datos de ejemplo. Los cambios duran hasta que recargues la página.</footer>
   </div>
 
   <script>
@@ -315,7 +376,7 @@
       cleaning: { name: 'Limpieza dental', duration: 45, price: 'S/ 120,00', professionals: ['a'] },
     };
     const professionals = { a: 'Odontóloga A', b: 'Odontólogo B' };
-    const dates = ['Mié. 25 nov.', 'Jue. 26 nov.', 'Vie. 27 nov.'];
+    const dates = ['Miércoles 25 de noviembre', 'Jueves 26 de noviembre', 'Viernes 27 de noviembre'];
     const times = ['09:00', '10:30', '12:00', '15:00'];
     const entries = [
       { day: 0, time: '09:00', professional: 'a', service: 'evaluation', patient: 'Paciente 01', status: 'Confirmada' },
@@ -323,22 +384,13 @@
       { day: 1, time: '10:30', professional: 'b', service: 'evaluation', patient: 'Paciente 02', status: 'Confirmada' },
     ];
     const byId = (id) => document.getElementById(id);
-    let selectedDay = 0;
+    const bookingSteps = ['service', 'picker', 'review', 'success'];
+    const bookingLabels = ['Servicio', 'Horario', 'Confirmación'];
+    let bookingStep = 'service';
     let selectedSlot = null;
     let holdUntil = null;
-    let mode = 'day';
     let detail = null;
     let detailTrigger = null;
-
-    function addButton(parent, label, action, pressed) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = label;
-      if (pressed !== undefined) button.setAttribute('aria-pressed', String(pressed));
-      button.addEventListener('click', action);
-      parent.append(button);
-      return button;
-    }
 
     function isAvailable(day, time, professional) {
       const occupied = entries.some((entry) => entry.day === day && entry.time === time
@@ -349,67 +401,93 @@
     }
 
     function showBookingStep(step) {
-      for (const name of ['picker', 'review', 'success']) byId('booking-' + name).hidden = name !== step;
+      bookingStep = step;
+      const index = bookingSteps.indexOf(step);
+      const completed = step === 'success';
+      for (const name of bookingSteps) {
+        const panel = byId('booking-' + name);
+        panel.hidden = name !== step;
+        panel.classList.toggle('stage-enter', name === step);
+      }
+      byId('booking-progress-label').hidden = completed;
+      byId('booking-progress-label').textContent = completed ? '' : 'Paso ' + (index + 1) + ' de 3 · ' + bookingLabels[index];
+      byId('booking-progress').value = Math.min(index + 1, 3);
+      byId('booking-progress').hidden = completed;
+      byId('illustration-booking').hidden = completed;
+      byId('illustration-confirmed').hidden = !completed;
       byId('booking-' + step).querySelector('h2').focus();
+    }
+
+    function renderService() {
+      const service = services[byId('service').value];
+      const preference = byId('professional');
+      for (const option of preference.options) {
+        option.disabled = option.value !== 'any' && !service.professionals.includes(option.value);
+      }
+      if (preference.selectedOptions[0].disabled) preference.value = 'any';
+      byId('service-meta').textContent = service.duration + ' min · ' + service.price + ' referencial';
+      byId('slot-service').textContent = service.name + ' · ' + service.duration + ' min';
     }
 
     function renderSummary() {
       const service = services[byId('service').value];
-      byId('summary-service').textContent = service.name + ' · ' + service.duration + ' min';
-      const preference = byId('professional').value;
-      byId('summary-professional').textContent = professionals[selectedSlot?.professional ?? preference] ?? 'Cualquier profesional';
-      byId('summary-time').textContent = selectedSlot ? dates[selectedSlot.day] + ' · ' + selectedSlot.time : 'Selecciona un turno';
+      byId('summary-service').textContent = service.name;
+      byId('summary-professional').textContent = professionals[selectedSlot.professional];
+      byId('summary-time').textContent = dates[selectedSlot.day] + ' · ' + selectedSlot.time;
       byId('summary-price').textContent = service.price;
     }
 
-    function renderBooking() {
-      const dayList = byId('dates');
-      const timeList = byId('times');
-      dayList.replaceChildren();
-      timeList.replaceChildren();
-      dates.forEach((label, day) => {
-        addButton(dayList, label, () => {
-          selectedDay = day;
-          selectedSlot = null;
-          renderBooking();
-          dayList.children[day].focus();
-        }, selectedDay === day);
-      });
+    function renderBookingSlots() {
+      const day = Number(byId('booking-date').value);
+      const timeSelect = byId('booking-time');
+      timeSelect.replaceChildren(new Option('Selecciona una hora', ''));
       const service = services[byId('service').value];
       const preference = byId('professional').value;
       const eligible = service.professionals.filter((key) => preference === 'any' || preference === key);
       for (const time of times) {
-        const professional = eligible.find((key) => isAvailable(selectedDay, time, key));
+        const professional = eligible.find((key) => isAvailable(day, time, key));
         if (!professional) continue;
-        const button = addButton(timeList, time, () => {
-          selectedSlot = { day: selectedDay, time, professional };
-          for (const sibling of timeList.children) sibling.setAttribute('aria-pressed', String(sibling === button));
-          byId('review-button').disabled = false;
-          renderSummary();
-        }, selectedSlot?.time === time);
+        const option = new Option(time, time);
+        option.dataset.professional = professional;
+        timeSelect.add(option);
       }
-      if (!timeList.children.length) {
-        timeList.textContent = 'Sin turnos disponibles con esta selección.';
-      }
-      byId('review-button').disabled = !selectedSlot;
-      renderSummary();
+      timeSelect.disabled = timeSelect.options.length === 1;
+      if (timeSelect.disabled) timeSelect.options[0].text = 'Sin turnos disponibles';
+      if (selectedSlot?.day === day) timeSelect.value = selectedSlot.time;
+      if (!timeSelect.value) timeSelect.selectedIndex = 0;
+      syncSelectedSlot();
     }
 
-    function resetBooking(message = '') {
+    function syncSelectedSlot() {
+      const timeSelect = byId('booking-time');
+      selectedSlot = null;
+      if (timeSelect.value) {
+        selectedSlot = {
+          day: Number(byId('booking-date').value),
+          time: timeSelect.value,
+          professional: timeSelect.selectedOptions[0].dataset.professional,
+        };
+      }
+      byId('review-button').disabled = !selectedSlot;
+    }
+
+    function resetBooking(step, message = '') {
       selectedSlot = null;
       holdUntil = null;
+      byId('booking-test').open = false;
       byId('booking-feedback').textContent = message;
-      renderBooking();
-      showBookingStep('picker');
+      renderBookingSlots();
+      showBookingStep(step);
     }
 
     function renderAgenda() {
+      const mode = byId('agenda-mode').value;
       const list = byId('agenda-days');
       list.dataset.mode = mode;
       list.replaceChildren();
       const filter = byId('agenda-professional').value;
       const dayFilter = Number(byId('agenda-date').value);
-      byId('agenda-date').disabled = mode === 'week';
+      byId('agenda-date-field').hidden = mode === 'week';
       dates.forEach((date, day) => {
         if (mode === 'day' && day !== dayFilter) return;
         const panel = document.createElement('section');
@@ -422,16 +500,19 @@
         const daily = entries.filter((entry) => entry.day === day && (filter === 'any' || entry.professional === filter));
         daily.sort((first, second) => first.time.localeCompare(second.time));
         for (const entry of daily) {
-          const label = entry.time + ' · ' + (entry.patient ?? 'Bloqueo de agenda');
-          const button = addButton(events, label, () => openDetail(entry, button));
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = entry.time + ' · ' + (entry.patient ?? 'Bloqueo de agenda');
           button.className = 'event';
           button.dataset.closed = String(!['Confirmada', 'Bloqueado'].includes(entry.status));
+          button.addEventListener('click', () => openDetail(entry, button));
           const subtitle = document.createElement('small');
           subtitle.textContent = professionals[entry.professional] + (entry.service ? ' · ' + services[entry.service].name : '');
           const status = document.createElement('span');
           status.className = 'tag';
           status.textContent = entry.status;
           button.append(subtitle, status);
+          events.append(button);
         }
         if (!daily.length) events.textContent = 'Sin citas ni bloqueos con este filtro.';
         panel.append(events);
@@ -442,7 +523,7 @@
     function renderDetailSlots() {
       const professional = byId('detail-professional').value;
       const select = byId('detail-slot');
-      select.replaceChildren();
+      select.replaceChildren(new Option('Selecciona un turno', ''));
       const canProvideService = !detail?.service || services[detail.service].professionals.includes(professional);
       if (canProvideService) {
         dates.forEach((date, day) => {
@@ -451,7 +532,8 @@
           }
         });
       }
-      if (!select.options.length) select.add(new Option('Sin turnos disponibles', ''));
+      select.disabled = select.options.length === 1;
+      if (select.disabled) select.options[0].text = 'Sin turnos disponibles';
       updateDetailSave();
     }
 
@@ -471,10 +553,13 @@
       const filter = byId('agenda-professional').value;
       byId('detail-professional').value = entry?.professional ?? (filter === 'any' ? 'a' : filter);
       byId('detail-actions').hidden = Boolean(entry && !booking);
-      byId('detail-cancel').hidden = !booking;
+      byId('detail-edit').hidden = !booking;
+      byId('detail-editor').hidden = booking;
+      byId('detail-cancel-options').hidden = !booking;
+      byId('detail-cancel-options').open = false;
       byId('move-reason-field').hidden = !booking;
       byId('move-reason').value = '';
-      byId('detail-save').textContent = booking ? 'Reprogramar cita' : 'Guardar bloqueo';
+      byId('detail-save').textContent = booking ? 'Guardar nuevo horario' : 'Guardar bloqueo';
       renderDetailSlots();
       byId('agenda-detail').hidden = false;
       byId('detail-title').focus();
@@ -494,11 +579,15 @@
       renderAgenda();
       byId('agenda-feedback').textContent = message;
       byId('agenda-title').focus();
-      if (byId('booking-review').hidden && byId('booking-success').hidden) {
-        selectedSlot = null;
-        renderBooking();
-      }
+      if (bookingStep === 'picker') renderBookingSlots();
     }
+
+    const viewSwitch = byId('view-switch');
+    viewSwitch.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !viewSwitch.open) return;
+      viewSwitch.open = false;
+      viewSwitch.querySelector('summary').focus();
+    });
 
     document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
       const view = button.dataset.view;
@@ -506,9 +595,9 @@
       document.querySelectorAll('nav [data-view]').forEach((item) => {
         item.setAttribute('aria-pressed', String(item.dataset.view === view));
       });
-      if (button.id === 'agenda-new-booking') resetBooking();
+      viewSwitch.open = false;
+      if (button.id === 'agenda-new-booking') resetBooking('service');
       if (view === 'agenda') {
-        if (holdUntil <= Date.now() && holdUntil) resetBooking('El turno de ejemplo venció. Elige otro horario.');
         renderAgenda();
       } else {
         closeDetail(false);
@@ -516,22 +605,27 @@
       byId(view + '-title').focus();
     }));
 
-    ['service', 'professional'].forEach((id) => byId(id).addEventListener('change', () => {
+    byId('service').addEventListener('change', renderService);
+    byId('show-slots').addEventListener('click', () => resetBooking('picker'));
+    byId('back-service').addEventListener('click', () => resetBooking('service'));
+    byId('booking-date').addEventListener('change', () => {
       selectedSlot = null;
       byId('booking-feedback').textContent = '';
-      renderBooking();
-    }));
+      renderBookingSlots();
+    });
+    byId('booking-time').addEventListener('change', syncSelectedSlot);
     byId('review-button').addEventListener('click', () => {
       if (!selectedSlot || !isAvailable(selectedSlot.day, selectedSlot.time, selectedSlot.professional)) {
-        resetBooking('Ese turno ya no está disponible. Elige otro horario.');
+        resetBooking('picker', 'Ese turno ya no está disponible. Elige otro horario.');
         return;
       }
       holdUntil = Date.now() + 10 * 60 * 1000;
+      renderSummary();
       showBookingStep('review');
     });
     byId('confirm-booking').addEventListener('click', () => {
       if (Date.now() >= holdUntil) {
-        resetBooking('El turno de ejemplo venció. Elige otro horario.');
+        resetBooking('picker', 'El turno de ejemplo venció. Elige otro horario.');
         return;
       }
       entries.push({ ...selectedSlot, service: byId('service').value, patient: 'Paciente Demo', status: 'Confirmada' });
@@ -539,34 +633,34 @@
       byId('agenda-date').value = String(selectedSlot.day);
       byId('agenda-professional').value = 'any';
       byId('agenda-feedback').textContent = '';
+      byId('success-time').textContent = dates[selectedSlot.day] + ' · ' + selectedSlot.time + ' · ' + professionals[selectedSlot.professional];
       showBookingStep('success');
     });
-    byId('back-booking').addEventListener('click', () => resetBooking());
-    byId('new-booking').addEventListener('click', () => resetBooking());
+    byId('back-booking').addEventListener('click', () => resetBooking('picker'));
+    byId('new-booking').addEventListener('click', () => resetBooking('service'));
     byId('expire-booking').addEventListener('click', () => {
       holdUntil = Date.now();
       byId('confirm-booking').click();
     });
 
-    dates.forEach((date, index) => byId('agenda-date').add(new Option(date, String(index))));
-    document.querySelectorAll('button[data-mode]').forEach((button) => {
-      button.addEventListener('click', () => {
-        mode = button.dataset.mode;
-        document.querySelectorAll('button[data-mode]').forEach((item) => {
-          item.setAttribute('aria-pressed', String(item === button));
-        });
-        closeDetail(false);
-        renderAgenda();
-      });
+    dates.forEach((date, index) => {
+      byId('booking-date').add(new Option(date, String(index)));
+      byId('agenda-date').add(new Option(date, String(index)));
     });
-    ['agenda-date', 'agenda-professional'].forEach((id) => byId(id).addEventListener('change', () => {
+    ['agenda-mode', 'agenda-date', 'agenda-professional'].forEach((id) => byId(id).addEventListener('change', () => {
       closeDetail(false);
       renderAgenda();
     }));
     byId('detail-professional').addEventListener('change', renderDetailSlots);
+    byId('detail-slot').addEventListener('change', updateDetailSave);
     byId('move-reason').addEventListener('change', updateDetailSave);
     byId('block-open').addEventListener('click', () => openDetail(null, byId('block-open')));
     byId('detail-close').addEventListener('click', () => closeDetail());
+    byId('detail-edit').addEventListener('click', () => {
+      byId('detail-edit').hidden = true;
+      byId('detail-editor').hidden = false;
+      byId('detail-professional').focus();
+    });
     byId('detail-save').addEventListener('click', () => {
       const value = byId('detail-slot').value;
       if (!value) return;
@@ -593,13 +687,11 @@
       finishAgenda('Cita cancelada en la agenda de ejemplo.', detail.day);
     });
 
-    const clinicalButtons = document.querySelectorAll('[data-clinical]');
-    clinicalButtons.forEach((button) => button.addEventListener('click', () => {
-      clinicalButtons.forEach((item) => {
-        item.setAttribute('aria-pressed', String(item === button));
-        byId(item.dataset.clinical).hidden = item !== button;
-      });
-    }));
+    byId('clinical-view').addEventListener('change', (event) => {
+      for (const panel of document.querySelectorAll('.clinical-panel')) {
+        panel.hidden = panel.id !== event.target.value;
+      }
+    });
     byId('note-form').addEventListener('submit', (event) => {
       event.preventDefault();
       const fields = new FormData(event.currentTarget);
@@ -613,7 +705,8 @@
       byId('note-status').textContent = 'Borrador de ejemplo guardado para esta sesión.';
     });
 
-    renderBooking();
+    renderService();
+    renderBookingSlots();
     renderAgenda();
   </script>
 </body>

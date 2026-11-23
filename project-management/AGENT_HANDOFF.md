@@ -28,6 +28,7 @@ GPT retomó la coordinación de Orca en el run `run_0f6c0f42c699`. La carpeta pr
 | ADE-006, revisión adicional | Antigravity Chat | Bloqueada por un error del host. Orca confirmó que el trabajador se detuvo y liberó sus recursos. | Tarea Orca `task_6836b32888ad`, despacho `ctx_9f98a80fa733`. |
 | ADE-007 | GPT | Matriz de permisos, auditoría y decisiones de retención lista para validación. | [Propuesta](../docs/requirements/clinical-access-proposal.md) |
 | ADE-008 | GPT | Flujos de confirmación, pagos, asociaciones y saldos listos para validación. | [Propuesta](../docs/database/appointment-payments-proposal.md) |
+| ADE-010 | GPT y Antigravity | GPT simplificó los recorridos de reserva, agenda y ficha. Antigravity creó los SVG de reserva y confirmación en un worktree aislado. | Tarea Orca `task_ee74e07ffc82`, despacho `ctx_e2e0ed03ec82`, commit de ilustraciones `58311da`. [Prototipo](../docs/design/wireframes.html) |
 
 Orca registra los resultados de los trabajadores de ADE-005 y ADE-006. Los mensajes recuperados carecen de cifras verificables de tokens, caché, costo y latencia del proveedor. Se usó OpenCode para ADE-005 con el modelo que ya había completado la revisión de ADE-002 y con Gemini CLI ausente del entorno local.
 
