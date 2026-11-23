@@ -6,10 +6,12 @@ reales del consultorio.
 
 ## Requisitos
 
-- Node.js 26.12.1 (versión validada; Next.js requiere 20.9.0 o superior).
+- Node.js 26.12.1, versión probada para esta base.
 - npm 11.20.0.
 
-En Windows con PowerShell, invoca npm como `npm.cmd`.
+`package.json` declara `engines.node >=22.9.0`, el rango coherente con la metadata
+de npm 11.20.0 (`^20.17.0 || >=22.9.0`). En Windows con PowerShell, invoca npm
+como `npm.cmd`.
 
 ## Instalación
 
@@ -35,6 +37,9 @@ npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
 ```
+
+`typecheck` ejecuta `next typegen` antes de `tsc --noEmit` para generar las
+declaraciones de Next.js en un checkout limpio.
 
 Para probar la compilación de producción:
 

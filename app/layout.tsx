@@ -3,13 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  applicationName: "Consultorio dental",
-  title: {
-    default: "Consultorio dental · Base local",
-    template: "%s · Consultorio dental",
-  },
-  description:
-    "Página de arranque de la base local del proyecto. No publica información comercial ni datos de pacientes.",
+  title: "Consultorio dental",
+  description: "Base local de la aplicación.",
   robots: {
     index: false,
     follow: false,
