@@ -18,7 +18,19 @@ GPT es coordinador. El proyecto de Orca apunta a `D:\rim\consultorioDENTAL`. La 
 
 ## Continuidad
 
-1. Establecer la línea base Git antes de distribuir cambios de código. Crear worktrees separados para implementaciones paralelas y revisar las diferencias antes de integrar.
-2. Separar la base local de Next.js del diseño de agenda. Coordinar cambios de política, autenticación, permisos e integridad con el propietario en las tareas que los necesiten.
-3. Comprobar Gemini CLI en el entorno elegido antes de asignarle trabajo. Si sigue sin estar disponible, elegir un agente operativo según la tarea y registrar el modelo y la justificación.
-4. Mantener a GPT como escritor de los registros de estado en la carpeta principal. Cada trabajador entrega evidencia y resultados para consolidación.
+GPT retomó la coordinación de Orca en el run `run_0f6c0f42c699`. La carpeta principal de Git está en `D:\rim\consultorioDENTAL`.
+
+| Tarea | Responsable | Resultado | Evidencia |
+| --- | --- | --- | --- |
+| ADE-004 | GPT | Línea base Git y worktrees aislados verificados. | Commit `5a3edf4`, inventario de Git y Orca. |
+| ADE-005 | OpenCode con DeepSeek V4.1 Flash Free y GPT | Base implementada, revisada e integrada. GPT repitió instalación, tipos, lint, build y prueba HTTP. | Tarea Orca `task_4631f97b8af4`, despachos `ctx_2e1d8c39aef6` y `ctx_801cb7e9567e`, integración `6ea2862`. [Informe original](../reports/ade-005-verification.md) |
+| ADE-006 | GPT y OpenCode con DeepSeek V4.1 Flash Free | Diseño revisado e integrado. Quedan reglas por acordar y pruebas en PostgreSQL. | Tarea Orca `task_cc4de6d16c05`, despacho `ctx_12f2d4648e43`, integración `6f75a0c`. [Diseño](../docs/database/scheduling-guarantees.md) |
+| ADE-006, revisión adicional | Antigravity Chat | Bloqueada por un error del host. Orca confirmó que el trabajador se detuvo y liberó sus recursos. | Tarea Orca `task_6836b32888ad`, despacho `ctx_9f98a80fa733`. |
+| ADE-007 | GPT | Matriz de permisos, auditoría y decisiones de retención lista para validación. | [Propuesta](../docs/requirements/clinical-access-proposal.md) |
+| ADE-008 | GPT | Flujos de confirmación, pagos, asociaciones y saldos listos para validación. | [Propuesta](../docs/database/appointment-payments-proposal.md) |
+
+Orca registra los resultados de los trabajadores de ADE-005 y ADE-006. Los mensajes recuperados carecen de cifras verificables de tokens, caché, costo y latencia del proveedor. Se usó OpenCode para ADE-005 con el modelo que ya había completado la revisión de ADE-002 y con Gemini CLI ausente del entorno local.
+
+1. Acordar con el consultorio cancelaciones, no-show, depósitos y el evento que confirma una reserva ordinaria.
+2. Validar permisos, auditoría y retención antes de implementar autenticación, relaciones clínicas o el esquema definitivo.
+3. Mantener a GPT a cargo de los registros en la carpeta principal. Incorporar la evidencia de cada trabajador y contrastar sus cambios antes de integrar.

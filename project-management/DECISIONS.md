@@ -35,3 +35,16 @@
   5. BR-PAY-04 permite asociar un pago a una cita o plan. El ER resumido solo muestra la relación a paciente y el comprobante. Queda por precisar asociaciones, saldos y si se debe conservar el precio histórico. [Modelo de datos](../docs/database/er-diagram.md), [BR-PAY-03 y BR-PAY-04](../docs/requirements/business-rules.md).
 - **Alternativas.** Evaluar un estado de expiración o una entidad separada para holds. Comparar la confirmación independiente de la cita con una ventana de pago explícita si el consultorio requiere depósito.
 - **Resultado.** ADE-006 y ADE-008 registran los criterios de diseño y casos de regresión. Las reglas críticas y las relaciones se mantienen como decisiones pendientes de validación. La evidencia es documental.
+
+## ADE-D005 · Integrar las entregas del ciclo de base local
+
+- **Fecha y responsable.** 2026-11-23. GPT, coordinador.
+- **Resultado.** Se verificó la línea base `5a3edf4` y el aislamiento en Orca. La rama de coordinación integró la base de Next.js en `6ea2862` sobre el diseño de agenda integrado en `6f75a0c`. Se repitieron instalación, tipos, lint, build y arranque.
+- **Evidencia.** [Estado actual](CURRENT_STATE.md) · [Resultados y despachos](AGENT_HANDOFF.md)
+
+## ADE-D006 · Llevar acceso clínico y pagos a validación del consultorio
+
+- **Fecha y responsable.** 2026-11-23. GPT preparó los diseños. El consultorio valida las políticas.
+- **Propuesta.** Alcance clínico por recurso y paciente, con auditoría de lecturas y escrituras. Confirmación de la reserva ordinaria al cerrar el formulario antes del vencimiento y validación posterior del abono.
+- **Pendiente.** Acordar responsables, permisos, reglas de retención y operación con adjuntos. Aprobar depósitos, cancelaciones y tratamiento de saldos antes de convertir los diseños en reglas del sistema.
+- **Evidencia.** [Acceso clínico](../docs/requirements/clinical-access-proposal.md) · [Confirmación y pagos](../docs/database/appointment-payments-proposal.md)

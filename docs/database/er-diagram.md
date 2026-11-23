@@ -8,6 +8,8 @@ Este documento define las entidades del MVP. No es todavía el esquema definitiv
 
 La propuesta técnica de agenda detalla los cambios a evaluar en el intervalo ocupado, el vencimiento de holds, la reprogramación y el alcance de los bloqueos antes de convertir este borrador en migraciones. [Garantías de la agenda](scheduling-guarantees.md).
 
+La asociación de pagos, los precios históricos y los saldos se desarrollan en la propuesta de ADE-008. El alcance de expedientes, adjuntos y auditoría está sujeto a la validación de ADE-007. [Confirmación y pagos](appointment-payments-proposal.md) · [Acceso clínico](../requirements/clinical-access-proposal.md)
+
 ## 1. Diagrama de agenda, pacientes y dinero
 
 ```mermaid

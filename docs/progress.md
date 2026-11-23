@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-**Fase actual:** 0 — Descubrimiento y diseño
+**Fase actual:** Base local disponible y diseño del MVP en validación
 **Última actualización:** 2026-11-23
 
 ## Completado
@@ -13,12 +13,16 @@
 - [x] ADR-001 de arquitectura y stack aprobado.
 - [x] Modelo de datos y diagrama ER preliminares.
 - [x] Registro de supuestos y preguntas abiertas.
+- [x] Línea base Git y espacios aislados en Orca.
+- [x] Base de Next.js con instalación reproducible, tipos, lint, build y arranque comprobados.
+- [x] Diseño de concurrencia, vencimiento y reprogramación de agenda revisado e integrado.
 
 ## En curso
 
 - [ ] Validación del alcance y de las reglas marcadas como propuesta.
 - [ ] Validación del modelo de datos preliminar.
 - [ ] Recolección de servicios, duraciones, precios y horarios.
+- [ ] Validación de las propuestas de [acceso clínico](requirements/clinical-access-proposal.md) y [confirmación de citas y pagos](database/appointment-payments-proposal.md).
 
 ## Próximos pasos
 
@@ -26,7 +30,7 @@
 2. Confirmar marca, dominio y titularidad de la cuenta de Meta Business.
 3. Validar el modelo de datos y las transiciones de agenda y pagos.
 4. Wireframes de reserva, agenda y ficha clínica.
-5. Implementar Hito 1: estructura, base de datos, auth y migraciones.
+5. Completar el Hito 1 con base de datos, autenticación y migraciones cuando el consultorio valide las políticas pertinentes.
 6. Implementar Hito 2: landing + agenda + reserva.
 7. Implementar Hito 3: WhatsApp (confirmación y recordatorio).
 8. Implementar Hito 4: historia clínica y pagos manuales.
@@ -38,7 +42,7 @@
 
 ## Verificación ejecutada
 
-Se completó la auditoría inicial y una revisión independiente del diseño. Las verificaciones de aplicación quedan pendientes hasta que exista código. [Estado del proyecto](../project-management/CURRENT_STATE.md).
+Se completaron la auditoría inicial, la revisión de concurrencia de agenda y las verificaciones de la base local integrada. Las pruebas de negocio se ejecutarán con las implementaciones correspondientes. [Estado del proyecto](../project-management/CURRENT_STATE.md)
 
 ## Riesgos conocidos
 
