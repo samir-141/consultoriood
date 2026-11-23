@@ -5,8 +5,7 @@ export default function HomePage() {
         Consultorio dental
       </h1>
       <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-        La base local está operativa y todavía no incluye contenido comercial ni
-        datos de pacientes.
+        La aplicación está lista para el desarrollo local.
       </p>
     </main>
   );
