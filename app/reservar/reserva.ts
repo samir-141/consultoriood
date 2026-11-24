@@ -163,14 +163,54 @@ export function calendarHref(appointment: Pick<Appointment, "id" | "date" | "tim
   return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
 }
 
-type AvailabilityResult = { request: string; slots: Slot[]; error: string };
+export type DayAvailabilityInfo = {
+  date: string;
+  availableCount: number;
+  reservable: boolean;
+  status: string;
+  walkInAvailable: boolean;
+};
 
-function availabilityQuery(date: string, serviceId: string, professionalId: string) {
-  return new URLSearchParams({ date, serviceId, professionalId }).toString();
+export type MonthlyAvailability = {
+  mes: string;
+  month: string;
+  today: string;
+  servicio: string;
+  serviceId: string;
+  minAdvanceMinutes: number;
+  nextAvailableDate: string | null;
+  todayStatus: string;
+  walkInToday: boolean;
+  walkInMessage: string | null;
+  days: Record<string, DayAvailabilityInfo>;
+};
+
+export type DailyAvailability = {
+  fecha: string;
+  date: string;
+  reservable: boolean;
+  estadoDia: string;
+  minAdvanceMinutes: number;
+  walkInDisponible: boolean;
+  mensajeWalkIn: string | null;
+  horariosDisponibles: string[];
+  horariosOcupados: string[];
+  slots: Slot[];
+};
+
+type AvailabilityResult = {
+  request: string;
+  slots: Slot[];
+  daily: DailyAvailability | null;
+  error: string;
+};
+
+function dailyAvailabilityQuery(date: string, serviceId: string, professionalId: string) {
+  return new URLSearchParams({ fecha: date, servicio: serviceId, profesional: professionalId }).toString();
 }
 
-function fetchSlots(query: string, signal: AbortSignal) {
-  return bookingRequest<{ slots: Slot[] }>(`/api/disponibilidad?${query}`, { signal });
+function fetchDailyAvailability(query: string, signal: AbortSignal) {
+  return bookingRequest<DailyAvailability>(`/api/reservas?${query}`, { signal });
 }
 
 export async function nextDayWithSlots(
@@ -183,7 +223,7 @@ export async function nextDayWithSlots(
   for (let offset = 1; offset <= 7; offset++) {
     const date = addDays(from, offset);
     if (date > last) break;
-    const { slots } = await fetchSlots(availabilityQuery(date, serviceId, professionalId), signal);
+    const { slots } = await fetchDailyAvailability(dailyAvailabilityQuery(date, serviceId, professionalId), signal);
     if (slots.length) return date;
   }
   return null;
@@ -192,19 +232,19 @@ export async function nextDayWithSlots(
 export function useSlots(date: string, serviceId: string, professionalId: string, active: boolean) {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<AvailabilityResult | null>(null);
-  const query = availabilityQuery(date, serviceId, professionalId);
+  const query = dailyAvailabilityQuery(date, serviceId, professionalId);
   const request = active && serviceId && isBookingDay(date, todayInLima()) ? `${query}|${attempt}` : "";
 
   useEffect(() => {
     if (!request) return;
     const controller = new AbortController();
 
-    fetchSlots(query, controller.signal)
-      .then(({ slots }) => {
-        if (!controller.signal.aborted) setResult({ request, slots, error: "" });
+    fetchDailyAvailability(query, controller.signal)
+      .then((daily) => {
+        if (!controller.signal.aborted) setResult({ request, slots: daily.slots, daily, error: "" });
       })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted) setResult({ request, slots: [], error: bookingMessage(error) });
+        if (!controller.signal.aborted) setResult({ request, slots: [], daily: null, error: bookingMessage(error) });
       });
 
     return () => controller.abort();
@@ -214,9 +254,50 @@ export function useSlots(date: string, serviceId: string, professionalId: string
 
   return {
     slots: matching?.slots ?? [],
+    daily: matching?.daily ?? null,
     error: matching?.error ?? "",
     loading: Boolean(request && !matching),
     refresh: () => setAttempt((value) => value + 1),
+  };
+}
+
+export function useMonthAvailability(
+  month: string,
+  serviceId: string,
+  professionalId: string,
+  initialData: MonthlyAvailability | null = null,
+) {
+  const [attempt, setAttempt] = useState(0);
+  const [state, setState] = useState<{ request: string; data: MonthlyAvailability | null; error: string } | null>(null);
+  const query = new URLSearchParams({ mes: month, servicio: serviceId, profesional: professionalId }).toString();
+  const request = month && serviceId ? `${query}|${attempt}` : "";
+
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+
+    bookingRequest<MonthlyAvailability>(`/api/reservas?${query}`, { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setState({ request, data, error: "" });
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setState({ request, data: null, error: bookingMessage(error) });
+      });
+
+    return () => controller.abort();
+  }, [query, request]);
+
+  const matching = request && state?.request === request ? state : null;
+  const fallback =
+    !matching && initialData && initialData.mes === month && initialData.servicio === serviceId
+      ? initialData
+      : null;
+
+  return {
+    data: matching?.data ?? fallback,
+    error: matching?.error ?? "",
+    loading: Boolean(request && !matching && !fallback),
+    refresh: () => setAttempt((v) => v + 1),
   };
 }
 

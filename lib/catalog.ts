@@ -1,19 +1,5 @@
-export const clinic = {
-  name: "Gómez Delgado",
-  descriptor: "Clínica dental",
-  location: "Lima, Perú",
-  timeZone: "America/Lima",
-  hours: "Lunes a sábado, 9:00 a. m. a 5:00 p. m.",
-  demo: true,
-};
+import { clinic as business, openingHours } from "@/config/site";
 
-export const services = [
-  { id: "evaluacion", name: "Evaluación dental", description: "Primera consulta para conversar sobre tu salud bucal y conocer los siguientes pasos.", duration: 30, priceCents: 8000 },
-  { id: "limpieza", name: "Limpieza dental", description: "Atención preventiva con orientación para el cuidado diario.", duration: 45, priceCents: 12000 },
-  { id: "control", name: "Control dental", description: "Revisión de seguimiento después de una consulta o tratamiento.", duration: 30, priceCents: 9000 },
-];
+export { clinics, professionals, schedule, services } from "@/config/site";
 
-export const professionals = [
-  { id: "odonto-a", name: "Odontóloga A", title: "Odontología general", serviceIds: ["evaluacion", "limpieza", "control"] },
-  { id: "odonto-b", name: "Odontólogo B", title: "Evaluación y seguimiento", serviceIds: ["evaluacion", "control"] },
-];
+export const clinic = { ...business, hours: openingHours };

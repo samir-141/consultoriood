@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const service = publicServices.find(({ id }) => id === servicio);
   if (!service) notFound();
 
-  const title = `${service.name} en Lima`;
+  const title = `${service.name} en Huamanga`;
   const origin = publicSiteOrigin();
   const url = origin ? new URL(`/servicios/${service.id}`, origin) : undefined;
   return {
