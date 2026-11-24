@@ -16,6 +16,7 @@ type AuditResult = "OK" | "DENIED" | "ERROR";
 
 const planStatuses = ["DRAFT", "PROPOSED", "ACCEPTED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
 const clinicalActions = ["note", "odontogram", "plan", "plan-status", "consent", "background"] as const;
+const noBody = () => null;
 
 async function recordAudit(
   db: Query,
@@ -31,15 +32,25 @@ async function recordAudit(
   `, [randomUUID(), actorId, patientId, action, result, resourceId]);
 }
 
-async function withClinicalRecord(
+async function requireAssignment(db: Query, user: Staff, patientId: string, lock = false) {
+  if (user.role !== "ODONTOLOGO") return;
+  const assignment = await db.query(`
+    SELECT 1 FROM patient_assignments
+    WHERE patient_id = $1 AND professional_id = $2
+    ${lock ? "FOR SHARE" : ""}
+  `, [patientId, user.professionalId]);
+  if (!assignment.rows.length) throw new HttpError(403, "El paciente no está asignado a tu atención.");
+}
+
+async function withClinicalRecord<T>(
   request: Request,
   id: string,
   action: string,
-  work: (tx: Transaction, user: Staff, patient: Patient) => Promise<ClinicalResult>,
+  prepare: () => T | Promise<T>,
+  work: (tx: Transaction, user: Staff, patient: Patient, input: T) => Promise<ClinicalResult>,
   resourceId: string | null = null,
 ) {
   const patientId = requiredId(id, "el paciente");
-  const db = await getDb();
   let actorId: string | null = null;
   try {
     const user = await requireUser(request);
@@ -47,34 +58,32 @@ async function withClinicalRecord(
     if (user.role !== "ADMIN" && user.role !== "ODONTOLOGO") {
       throw new HttpError(403, "Tu rol no tiene acceso a la ficha clínica.");
     }
+    const db = await getDb();
+    if (prepare !== noBody) await requireAssignment(db, user, patientId);
+    const input = await prepare();
     return await db.transaction(async (tx) => {
-      if (user.role === "ODONTOLOGO") {
-        const assignment = await tx.query(`
-          SELECT 1 FROM patient_assignments
-          WHERE patient_id = $1 AND professional_id = $2
-          FOR SHARE
-        `, [patientId, user.professionalId]);
-        if (!assignment.rows.length) throw new HttpError(403, "El paciente no está asignado a tu atención.");
-      }
+      await requireAssignment(tx, user, patientId, true);
       const { rows } = await tx.query<Patient>(`
         SELECT id, name, phone, email, birth_date::text AS "birthDate", background
         FROM patients WHERE id = $1
       `, [patientId]);
       const patient = rows[0];
       if (!patient) throw new HttpError(404, "No se encontró al paciente.");
-      const result = await work(tx, user, patient);
+      const result = await work(tx, user, patient, input);
       await recordAudit(tx, actorId, patientId, action, "OK", result.resourceId ?? resourceId);
       return result.response;
     });
   } catch (error) {
-    const denial = error instanceof HttpError && (error.status === 401 || error.status === 403);
-    await recordAudit(db, actorId, patientId, action, denial ? "DENIED" : "ERROR", resourceId);
+    if (actorId) {
+      const denial = error instanceof HttpError && error.status === 403;
+      await recordAudit(await getDb(), actorId, patientId, action, denial ? "DENIED" : "ERROR", resourceId);
+    }
     throw error;
   }
 }
 
 export async function readClinicalRecord(request: Request, id: string) {
-  return withClinicalRecord(request, id, "READ_RECORD", async (tx, user, patient) => {
+  return withClinicalRecord(request, id, "READ_RECORD", noBody, async (tx, user, patient) => {
     const args = [patient.id];
     const { rows: appointments } = await tx.query(`
       SELECT id, patient_id AS "patientId", $2::text AS "patientName",
@@ -198,8 +207,7 @@ async function storePlan(tx: Transaction, user: Staff, patient: Patient, body: R
 }
 
 export async function writeClinicalRecord(request: Request, id: string) {
-  return withClinicalRecord(request, id, "WRITE_RECORD", async (tx, user, patient) => {
-    const body = await readJson(request);
+  return withClinicalRecord(request, id, "WRITE_RECORD", () => readJson(request), async (tx, user, patient, body) => {
     const action = oneOf(body.action, clinicalActions, "la operación clínica");
     let resourceId: string = randomUUID();
     switch (action) {
@@ -243,8 +251,7 @@ export async function writeClinicalRecord(request: Request, id: string) {
 }
 
 export async function uploadClinicalAttachment(request: Request, id: string) {
-  return withClinicalRecord(request, id, "UPLOAD_ATTACHMENT", async (tx, user, patient) => {
-    const file = await readClinicalUpload(request);
+  return withClinicalRecord(request, id, "UPLOAD_ATTACHMENT", () => readClinicalUpload(request), async (tx, user, patient, file) => {
     const resourceId = randomUUID();
     await tx.query(`
       INSERT INTO clinical_attachments (id,patient_id,author_id,name,mime,size,content)
@@ -256,7 +263,7 @@ export async function uploadClinicalAttachment(request: Request, id: string) {
 
 export async function downloadClinicalAttachment(request: Request, id: string, value: string) {
   const attachmentId = requiredId(value, "el adjunto");
-  return withClinicalRecord(request, id, "DOWNLOAD_ATTACHMENT", async (tx, _user, patient) => {
+  return withClinicalRecord(request, id, "DOWNLOAD_ATTACHMENT", noBody, async (tx, _user, patient) => {
     const { rows } = await tx.query<PrivateFile>(`
       SELECT name, mime, content FROM clinical_attachments WHERE id = $1 AND patient_id = $2
     `, [attachmentId, patient.id]);

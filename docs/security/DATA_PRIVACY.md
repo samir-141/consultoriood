@@ -1,0 +1,9 @@
+# Privacidad y preparación para uso con pacientes
+
+La demostración usa registros ficticios. La reserva pide nombre, teléfono y correo opcional. La preferencia de WhatsApp alimenta una bandeja simulada. El calendario descargable incluye el turno, una referencia técnica y el texto «Cita dental». El enlace personal de gestión permite ver la cita hasta 24 horas después del fin y limita cancelación y reprogramación al periodo previo al inicio. [Información de privacidad en la aplicación](../../app/privacidad/page.tsx)
+
+El panel mantiene roles de Administración, Recepción y Odontología. Las decisiones de acceso se verifican en el servidor. Las operaciones clínicas autorizadas y los rechazos autenticados se auditan. El control local de tamaño de archivos y los permisos de descarga se describen en la [auditoría defensiva](SECURITY_AUDIT.md).
+
+La Autoridad Nacional de Protección de Datos Personales publica la Ley 29733 y el reglamento aprobado por el Decreto Supremo 016-2024-JUS, vigente desde el 31 de marzo de 2025. Antes de recibir expedientes reales, corresponde validar con el consultorio y asesoría especializada las finalidades y la base legal, la retención, los derechos de los titulares, el registro del banco de datos, los proveedores y transferencias, y el proceso de respuesta a incidentes. [Ley 29733](https://www.gob.pe/institucion/anpd/normas-legales/2018427-29733-2011) · [Vigencia y reglamento](https://www.gob.pe/institucion/anpd/campa%C3%B1as/128319-nuevo-reglamento-de-proteccion-de-datos-personales)
+
+La publicación con datos personales depende de credenciales individuales, TLS, gestión de secretos, copias y restauración probada, y de validar los plazos y políticas reales. La instrumentación de rendimiento y conversiones deberá excluir formularios sensibles, nombres, teléfonos, motivos de atención y enlaces de gestión. [Hoja de ruta](../../project-management/IMPLEMENTATION_PLAN.md)

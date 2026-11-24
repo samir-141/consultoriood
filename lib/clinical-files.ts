@@ -1,4 +1,4 @@
-import { HttpError, readJson } from "@/lib/http";
+import { HttpError, readBoundedBody, readJson } from "@/lib/http";
 import { requiredText } from "@/lib/clinical-validation";
 
 const fileLimit = 10 * 1024 * 1024;
@@ -22,37 +22,6 @@ function checkedFile(name: unknown, mime: unknown, content: Uint8Array): Private
   return { name: fileName.replace(/[\r\n/\\]/g, "_"), mime, content };
 }
 
-async function readBoundedBody(request: Request, limit: number) {
-  if (Number(request.headers.get("content-length")) > limit) {
-    throw new HttpError(413, "El archivo debe pesar hasta 10 MB.");
-  }
-  const reader = request.body?.getReader();
-  if (!reader) throw new HttpError(400, "Envía los datos de la solicitud.");
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    for (;;) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      size += chunk.value.length;
-      if (size > limit) {
-        await reader.cancel().catch(() => undefined);
-        throw new HttpError(413, "El archivo debe pesar hasta 10 MB.");
-      }
-      chunks.push(chunk.value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  const body = new Uint8Array(size);
-  let position = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, position);
-    position += chunk.length;
-  }
-  return body;
-}
-
 export async function readClinicalUpload(request: Request) {
   const type = request.headers.get("content-type");
   if (!type?.startsWith("multipart/form-data;")) throw new HttpError(400, "Selecciona un archivo.");
@@ -64,20 +33,20 @@ export async function readClinicalUpload(request: Request) {
   return checkedFile(file.name, file.type, new Uint8Array(await file.arrayBuffer()));
 }
 
-export async function readPaymentBody(request: Request) {
-  const body = await readBoundedBody(request, Math.ceil(fileLimit / 3) * 4 + 64 * 1024);
-  return readJson(new Request(request.url, { method: request.method, headers: request.headers, body }));
+export function readPaymentBody(request: Request) {
+  return readJson(request, Math.ceil(fileLimit / 3) * 4 + 64 * 1024);
 }
 
 export function readPaymentProof(body: Record<string, unknown>) {
   if (!body.proofName && !body.proofMime && !body.proofBase64) return null;
   const value = body.proofBase64;
-  if (typeof value !== "string" || !value || value.length % 4 !== 0 || !/^[a-zA-Z0-9+/]+={0,2}$/.test(value)) {
+  if (typeof value !== "string" || !value || value.length % 4 !== 0) {
     throw new HttpError(400, "Selecciona un comprobante válido.");
   }
   if (value.length > Math.ceil(fileLimit / 3) * 4) {
     throw new HttpError(413, "El archivo debe pesar hasta 10 MB.");
   }
+  if (!/^[a-zA-Z0-9+/]+={0,2}$/.test(value)) throw new HttpError(400, "Selecciona un comprobante válido.");
   return checkedFile(body.proofName, body.proofMime, Buffer.from(value, "base64"));
 }
 

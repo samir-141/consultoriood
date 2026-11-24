@@ -108,11 +108,3 @@ summary { width: fit-content; min-height: 2.5rem; padding-block: .4rem; font-wei
 .error { color: var(--danger); }
 .page-intro { padding-block: 1.75rem 1.25rem; }
 .page-intro p { margin-top: .6rem; color: var(--muted); }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
-    scroll-behavior: auto !important;
-  }
-}

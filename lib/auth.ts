@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { getDb } from "./db";
 import { HttpError, verifyOrigin } from "./http";
 import { digest, verifyPassword } from "./password";
+import { enforceLocalRequestLimit } from "./request-limit";
 
 export type Role = "ADMIN" | "RECEPCION" | "ODONTOLOGO";
 export type User = { id: string; name: string; role: Role; professionalId: string | null };
@@ -10,6 +11,7 @@ type Account = User & { passwordHash: string };
 const cookieName = "dental_session";
 const duration = 8 * 60 * 60;
 const tokenPattern = /^[a-f0-9]{64}$/;
+const missingAccountHash = "0".repeat(32) + ":" + "0".repeat(128);
 
 function tokenFrom(request: Request) {
   const cookie = request.headers.get("cookie")?.split(";").map((part) => part.trim())
@@ -39,18 +41,23 @@ export async function requireUser(request: Request, roles?: Role[]) {
   if (request.method !== "GET" && request.method !== "HEAD") verifyOrigin(request);
   const user = await currentUser(request);
   if (!user) throw new HttpError(401, "Inicia sesión para continuar.");
+  if (user.role === "ODONTOLOGO" && !user.professionalId) {
+    throw new HttpError(403, "Tu cuenta no tiene una agenda profesional asignada.");
+  }
   if (roles && !roles.includes(user.role)) throw new HttpError(403, "Tu rol no tiene acceso a esta acción.");
   return user;
 }
 
 export async function login(request: Request, email: string, password: string) {
+  enforceLocalRequestLimit("login");
   const db = await getDb();
   const users = await db.query<Account>(`
     SELECT id, name, role, professional_id AS "professionalId", password_hash AS "passwordHash"
       FROM users WHERE email = $1
   `, [email.toLowerCase()]);
   const account = users.rows[0];
-  if (!account || !verifyPassword(password, account.passwordHash)) {
+  const matches = await verifyPassword(password, account?.passwordHash ?? missingAccountHash);
+  if (!account || !matches) {
     throw new HttpError(401, "El correo o la contraseña no coinciden.");
   }
   const token = randomBytes(32).toString("hex");

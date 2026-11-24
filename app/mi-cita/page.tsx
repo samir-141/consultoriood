@@ -17,7 +17,10 @@ export default function MyAppointmentPage() {
       <section className={`${styles.card} ${styles.single}`} aria-labelledby="find-appointment">
         <div className={styles.stage}>
           <h2 id="find-appointment">Abre tu enlace de confirmación</h2>
-          <p>El enlace aparece al confirmar tu reserva. Úsalo para consultar, cambiar o cancelar tu cita.</p>
+          <p>
+            Abre el enlace personal que recibiste al confirmar. Puedes cambiar o cancelar antes de la hora de inicio.
+            El enlace vence 24 horas después de que termina la cita.
+          </p>
           <div className={styles.actions}>
             <Link className={styles.primary} href="/reservar">Reservar una cita</Link>
           </div>

@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -51,14 +52,16 @@ async function stop() {
   await done;
 }
 
-async function request(path, { method = "GET", body, cookie, origin = base, status = 200 } = {}) {
-  const headers = {};
+async function request(path, { method = "GET", body, cookie, origin = base, status = 200, headers: extraHeaders } = {}) {
+  const headers = { ...extraHeaders };
   if (cookie) headers.Cookie = cookie;
   if (!["GET", "HEAD"].includes(method)) headers.Origin = origin;
   if (body !== undefined && !(body instanceof FormData)) headers["Content-Type"] = "application/json";
   const response = await fetch(base + path, {
     method, headers, body: body === undefined || body instanceof FormData ? body : JSON.stringify(body),
     redirect: "manual",
+  }).catch((cause) => {
+    throw new Error(`${method} ${path} no recibió respuesta`, { cause });
   });
   const type = response.headers.get("content-type") ?? "";
   const data = type.includes("application/json") ? await response.json() : await response.text();
@@ -93,7 +96,20 @@ try {
   await boot();
   const { data: landing } = await request("/");
   assert.match(landing, /Gómez Delgado/);
-  assert.match(landing, /\/identidad\/gomita-saludo\.svg/);
+  assert.match(landing, /consulta-ilustrativa\.webp/);
+  assert.match(landing, /<meta name="robots" content="noindex, nofollow"/);
+  const { response: photo } = await request("/fotografia/consulta-ilustrativa.webp", { method: "HEAD" });
+  assert.match(photo.headers.get("content-type"), /^image\/webp\b/);
+  assert.ok(Number(photo.headers.get("content-length")) < 200_000);
+  const { data: robots } = await request("/robots.txt");
+  assert.match(robots, /Disallow:\s*\/\s*$/m);
+  await request("/sitemap.xml");
+  await request("/privacidad");
+  await request("/servicios/desconocido", { status: 404 });
+  for (const service of ["evaluacion", "limpieza", "control"]) {
+    const { data: detail } = await request(`/servicios/${service}`);
+    assert.match(detail, new RegExp(`/reservar\\?servicio=${service}`));
+  }
   await request("/reservar");
   await request("/ingresar");
   for (const name of ["marca", "gomita-saludo", "gomita-pensando", "gomita-exito"]) {
@@ -103,17 +119,22 @@ try {
   const { data: catalog } = await request("/api/catalogo");
   assert.equal(catalog.clinic.name, "Gómez Delgado");
   assert.equal(catalog.services.length, 3);
-  console.log("✓ Portada, identidad SVG y catálogo");
+  console.log("✓ Portada, fotografía WebP, tratamientos, privacidad e indexación de la demo");
 
   await request("/api/panel/agenda", { status: 401 });
   await request("/api/sesion", {
     method: "POST", body: {}, origin: "https://otro.example.test", status: 403,
   });
+  const { response: largeBody } = await request("/api/reservas", {
+    method: "POST", body: { padding: "a".repeat(256 * 1024) }, status: 413,
+  });
+  assert.match(largeBody.headers.get("cache-control"), /private, no-store/);
   const reception = await login("recepcion@demo.test");
   const dentist = await login("odontologia@demo.test");
   const admin = await login("admin@demo.test");
   await request("/api/panel/clinica/paciente-demo-1", { cookie: reception, status: 403 });
   await request("/api/panel/clinica/paciente-demo-2", { cookie: dentist, status: 403 });
+  await request("/api/panel/clinica/paciente-demo-2/adjuntos", { method: "POST", body: {}, cookie: dentist, status: 403 });
   const { data: directory } = await request("/api/panel/pacientes", { cookie: dentist });
   assert.deepEqual(directory.patients.map(({ id }) => id), ["paciente-demo-1"]);
   const savedPatient = await post("/api/panel/pacientes", {
@@ -121,6 +142,31 @@ try {
   }, reception, 201);
   assert.equal(savedPatient.patient.birthDate, "1983-01-12");
   console.log("✓ Sesiones, roles, pacientes y asignación clínica");
+
+  const { data: upcoming, response: upcomingResponse } = await request("/api/disponibilidad/proxima?serviceId=evaluacion");
+  assert.match(upcomingResponse.headers.get("cache-control"), /no-store/);
+  assert.deepEqual(Object.keys(upcoming), ["slot"]);
+  assert.ok(upcoming.slot.date >= localToday);
+  assert.deepEqual(Object.keys(upcoming.slot).sort(), ["date", "professionalId", "professionalName", "time"]);
+  const { data: sameDay } = await request(`/api/disponibilidad?date=${upcoming.slot.date}&serviceId=evaluacion`);
+  assert.deepEqual(sameDay.slots[0], upcoming.slot);
+  await request("/api/disponibilidad/proxima?serviceId=desconocido", { status: 400 });
+
+  const retryBody = { ...baseBooking, time: "15:00", name: "Paciente con reintento" };
+  const retryRequest = {
+    method: "POST", body: retryBody, status: 201, headers: { "Idempotency-Key": randomUUID() },
+  };
+  const [firstAttempt, retry] = await Promise.all([
+    request("/api/reservas", retryRequest), request("/api/reservas", retryRequest),
+  ]);
+  assert.deepEqual(firstAttempt.data, retry.data);
+  const { data: { patients: [retryPatient] } } = await request("/api/panel/pacientes?q=" + encodeURIComponent(retryBody.name), { cookie: reception });
+  assert.ok(retryPatient);
+  await post("/api/panel/pacientes", { ...retryPatient, phone: "900010104" }, reception);
+  assert.deepEqual((await request("/api/reservas", retryRequest)).data, firstAttempt.data);
+  await request("/api/reservas", { ...retryRequest, body: { ...retryBody, time: "15:15" }, status: 409 });
+  await post("/api/reservas/" + firstAttempt.data.token, { action: "cancel" });
+  console.log("✓ Próxima disponibilidad e idempotencia de reserva");
 
   const availability = "/api/disponibilidad?date=" + day + "&serviceId=limpieza&professionalId=odonto-a";
   const before = await request(availability);
@@ -155,6 +201,9 @@ try {
   await post("/api/panel/agenda", {
     action: "cancel", appointmentId: staffBooking.appointment.id,
   }, dentist, 403);
+  await post("/api/panel/agenda", {
+    action: "status", appointmentId: staffBooking.appointment.id, status: "NO_SHOW",
+  }, dentist, 409);
   for (const status of ["CHECKED_IN", "IN_PROGRESS", "COMPLETED"]) {
     const updated = await post("/api/panel/agenda", { action: "status", appointmentId: staffBooking.appointment.id, status }, dentist);
     assert.equal(updated.appointment.status, status);
@@ -230,11 +279,17 @@ try {
   const fixture = new PGlite(database, { extensions: { btree_gist } });
   try {
     await fixture.query("UPDATE appointments SET hold_expires_at=now()-interval '1 minute' WHERE id=$1", [expiring.appointment.id]);
+    await fixture.query(`
+      UPDATE appointments SET starts_at=now()-interval '49 hours',
+        ends_at=now()-interval '48 hours 15 minutes', occupied_until=now()-interval '48 hours 5 minutes'
+      WHERE id=$1
+    `, [firstAttempt.data.appointment.id]);
   } finally {
     await fixture.close();
   }
   await boot();
   await post("/api/reservas/" + expiring.token, { action: "confirm" }, undefined, 410);
+  await request("/api/reservas/" + firstAttempt.data.token, { status: 410 });
   assert.ok((await request(availability)).data.slots.some(({ time }) => time === "15:30"));
   assert.equal((await request("/api/reservas/" + messageHold.token)).data.appointment.status, "CONFIRMED");
   assert.equal((await request("/api/sesion", { cookie: admin })).data.user.role, "ADMIN");

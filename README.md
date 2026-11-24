@@ -18,7 +18,7 @@ La primera operación que requiere persistencia inicializa PostgreSQL embebido m
 
 ## Recorridos
 
-- **Paciente.** Desde la landing, elige servicio, profesional y horario. El turno se retiene diez minutos al pasar a confirmación. Guarda el enlace de gestión para consultar, mover o cancelar la cita.
+- **Paciente.** En la portada, compara los servicios y consulta el próximo turno de evaluación de la agenda local. Al reservar, elige servicio, profesional y horario. El turno se retiene hasta diez minutos al pasar a confirmación. Guarda el enlace de gestión para consultar, mover o cancelar la cita.
 - **Recepción.** Consulta la agenda diaria o semanal, gestiona turnos y bloqueos, registra pacientes y revisa abonos y comprobantes.
 - **Odontología.** Consulta citas y pacientes asignados. Registra atención, enmiendas, odontograma, antecedentes, consentimientos, planes y adjuntos.
 - **Administración.** Consulta la auditoría clínica y registra devoluciones. La bandeja de mensajes de Recepción y Administración permite simular confirmaciones y recordatorios con enlace.
@@ -45,3 +45,5 @@ npm.cmd run verify
 ## Puesta en marcha con el consultorio
 
 Esta versión usa el catálogo, el equipo y los horarios de demostración, con sesiones locales y política de cancelación de prueba. Para operar con datos reales quedan pendientes la configuración de Supabase, las credenciales de producción, la entrega efectiva por Meta WhatsApp y la validación de las políticas de acceso, retención, depósitos y cancelaciones. [Alcance y pendientes](docs/progress.md)
+
+La demostración mantiene `noindex` y bloquea el rastreo. `DENTAL_PUBLIC_URL` admite un origen HTTPS para preparar las URL canónicas, Open Graph y el sitemap, sin habilitar la indexación.

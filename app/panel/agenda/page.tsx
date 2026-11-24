@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { validDate } from "@/lib/clinic-time";
+import { atLima, validDate } from "@/lib/clinic-time";
 import {
   dateLabel, errorMessage, nextDate, postJson, staffFetch, statusLabels, todayLima, useStaff,
   StaffRequestError,
@@ -305,6 +305,16 @@ function AppointmentStatusForm({ appointment, busy, onSave }: {
   appointment: Appointment; busy: boolean; onSave: (status: Status) => void;
 }) {
   const [nextStatus, setNextStatus] = useState("");
+  const [clock, setClock] = useState(Date.now);
+  const untilStart = atLima(appointment.date, appointment.time).getTime() - clock;
+  const statuses = (transitions[appointment.status] ?? []).filter((status) => status !== "NO_SHOW" || untilStart <= 0);
+
+  useEffect(() => {
+    if (appointment.status !== "CONFIRMED" || untilStart <= 0) return;
+    const timer = setTimeout(() => setClock(Date.now()), Math.min(untilStart, 2_147_483_647));
+    return () => clearTimeout(timer);
+  }, [appointment.status, untilStart]);
+
   return (
     <form className={styles.search} onSubmit={(event) => {
       event.preventDefault();
@@ -313,7 +323,7 @@ function AppointmentStatusForm({ appointment, busy, onSave }: {
       <label className={styles.field}>Nuevo estado
         <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value)} required>
           <option value="">Selecciona un estado</option>
-          {(transitions[appointment.status] ?? []).map((status) => <option value={status} key={status}>{statusLabels[status]}</option>)}
+          {statuses.map((status) => <option value={status} key={status}>{statusLabels[status]}</option>)}
         </select>
       </label>
       <button className={styles.secondary} type="submit" disabled={busy || !nextStatus}>Guardar estado</button>

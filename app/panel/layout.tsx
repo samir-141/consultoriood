@@ -88,6 +88,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
   return (
     <StaffContext.Provider value={staff}>
       <div className={styles.workspace}>
+        <a className={styles.skip} href="#contenido">Saltar al contenido</a>
         <header className={styles.bar}>
           <div className={styles.wrap}>
             <div className={styles.barRow}>
@@ -108,7 +109,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
         </header>
-        <main className={`${styles.wrap} ${styles.main}`} id="contenido">
+        <main className={`${styles.wrap} ${styles.main}`} id="contenido" tabIndex={-1}>
           {sessionError && <p role="alert" className={styles.error}>{sessionError}</p>}
           {allowed ? children : (
             <section className={`${styles.card} ${styles.stack}`}>

@@ -1,6 +1,6 @@
 # Estado actual
 
-**Corte del 2026-11-23.** La versión web local 1.0.1 está integrada y lista para evaluación con datos de ejemplo. La configuración y las políticas del consultorio siguen en validación.
+**Corte del 2026-11-24.** La versión web local 1.0.1 incorpora la portada rediseñada, el acceso contextual desde servicios a reserva y la consulta del próximo turno. El consultorio todavía debe validar los datos y las reglas para la operación real. [Informe de QA](QA_REPORT.md) · [Hoja de ruta](IMPLEMENTATION_PLAN.md)
 
 ## Línea base
 

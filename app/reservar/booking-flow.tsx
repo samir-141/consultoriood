@@ -5,8 +5,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ClinicBrand } from "@/app/components/clinic-brand";
 import {
   BookingError,
+  appointmentDuration,
   bookingMessage,
   bookingRequest,
+  calendarHref,
   postBooking,
   price,
   readableDate,
@@ -22,6 +24,7 @@ import {
 } from "./reserva";
 import styles from "./booking.module.css";
 import { Gomita } from "./gomita";
+import { ScheduleFields } from "./schedule-fields";
 
 type Step = "service" | "schedule" | "contact" | "review" | "confirmed";
 type Contact = { name: string; phone: string; email: string; whatsappOptIn: boolean };
@@ -41,20 +44,33 @@ function ScheduleSummary({
   professionalName,
   serviceName,
   priceCents,
-}: Pick<Appointment, "date" | "time" | "professionalName" | "serviceName" | "priceCents">) {
+  endTime,
+  location,
+}: Pick<Appointment, "date" | "time" | "endTime" | "professionalName" | "serviceName" | "priceCents">
+  & { location: string }) {
   return (
     <dl className={styles.details}>
       <div><dt>Servicio</dt><dd>{serviceName}</dd></div>
       <div><dt>Profesional</dt><dd>{professionalName}</dd></div>
       <div><dt>Horario en Lima</dt><dd>{readableDate(date)} a las {time}</dd></div>
+      <div><dt>Duración estimada</dt><dd>{appointmentDuration({ date, time, endTime })} min</dd></div>
+      <div><dt>Ubicación</dt><dd>{location}</dd></div>
       <div><dt>Precio referencial</dt><dd>{price(priceCents)}</dd></div>
     </dl>
   );
 }
 
-export default function BookingFlow({ catalog }: { catalog: Catalog }) {
+export default function BookingFlow({
+  catalog,
+  initialServiceId,
+  location,
+}: {
+  catalog: Catalog;
+  initialServiceId: string;
+  location: string;
+}) {
   const [step, setStep] = useState<Step>("service");
-  const [serviceId, setServiceId] = useState("");
+  const [serviceId, setServiceId] = useState(initialServiceId);
   const [professionalId, setProfessionalId] = useState("any");
   const [date, setDate] = useState(todayInLima);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -65,6 +81,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
   const [busy, setBusy] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef(step);
+  const reservationAttempt = useRef<{ payload: string; key: string } | null>(null);
   const service = catalog.services.find((item) => item.id === serviceId);
   const professionals = catalog.professionals.filter((item) => item.serviceIds.includes(serviceId));
   const availability = useSlots(date, serviceId, professionalId, step === "schedule");
@@ -83,6 +100,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
   }
 
   function changeSlot(message = "") {
+    reservationAttempt.current = null;
     setHold(null);
     setSelectedSlot(null);
     setError(message);
@@ -96,7 +114,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
     setBusy(true);
     setError("");
     try {
-      const result = await postBooking<Hold>("/api/reservas", {
+      const data = {
         serviceId: service.id,
         date: selectedSlot.date,
         time: selectedSlot.time,
@@ -105,11 +123,21 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
         phone: contact.phone.trim(),
         email: contact.email.trim() || undefined,
         whatsappOptIn: contact.whatsappOptIn,
-      });
+      };
+      const payload = JSON.stringify(data);
+      if (reservationAttempt.current?.payload !== payload) {
+        reservationAttempt.current = { payload, key: crypto.randomUUID() };
+      }
+      const result = await postBooking<Hold>("/api/reservas", data, reservationAttempt.current.key);
       setHold(result);
-      go("review");
+      if (result.appointment.status === "CONFIRMED") {
+        setAppointment(result.appointment);
+        go("confirmed");
+      } else {
+        go("review");
+      }
     } catch (cause) {
-      if (cause instanceof BookingError && cause.status === 409) changeSlot(cause.message);
+      if (cause instanceof BookingError && [409, 410].includes(cause.status)) changeSlot(cause.message);
       else setError(bookingMessage(cause));
     } finally {
       setBusy(false);
@@ -221,7 +249,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                             setSelectedSlot(null);
                           }}
                         >
-                          <option value="any">Cualquier profesional</option>
+                          <option value="any">Primer profesional disponible</option>
                           {professionals.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                         </select>
                       </label>
@@ -246,54 +274,21 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
             {step === "schedule" && (
               <>
                 <h2 tabIndex={-1} ref={heading}>Elige la fecha y la hora</h2>
-                {service && <p className={styles.muted}>{service.name} · {service.duration} min</p>}
-                <div className={styles.row}>
-                  <label className={styles.field}>
-                    Fecha
-                    <input
-                      type="date"
-                      value={date}
-                      min={todayInLima()}
-                      onChange={(event) => {
-                        setDate(event.target.value);
-                        setSelectedSlot(null);
-                        setError("");
-                      }}
-                    />
-                  </label>
-                  <label className={styles.field}>
-                    Hora de Lima
-                    <select
-                      value={markedSlot ? slotKey(markedSlot) : ""}
-                      disabled={availability.loading || !availability.slots.length}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setSelectedSlot(availability.slots.find((slot) => slotKey(slot) === value) ?? null);
-                      }}
-                    >
-                      <option value="">
-                        {availability.loading ? "Buscando horas…" : "Selecciona una hora"}
-                      </option>
-                      {availability.slots.map((slot) => (
-                        <option key={slotKey(slot)} value={slotKey(slot)}>
-                          {slot.time} · {slot.professionalName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                {service && <p className={styles.muted}>{service.name} · {service.duration} min · {location}</p>}
+                <ScheduleFields
+                  date={date}
+                  serviceId={serviceId}
+                  professionalId={professionalId}
+                  timeValue={markedSlot ? slotKey(markedSlot) : ""}
+                  availability={availability}
+                  onDateChange={(nextDate) => {
+                    setDate(nextDate);
+                    setSelectedSlot(null);
+                    setError("");
+                  }}
+                  onSlotChange={setSelectedSlot}
+                />
                 {error && <p className={styles.notice} role="status">{error}</p>}
-                {availability.error && (
-                  <>
-                    <p className={styles.error} role="alert">{availability.error}</p>
-                    <button type="button" className={styles.simpleButton} onClick={availability.refresh}>
-                      Buscar otra vez
-                    </button>
-                  </>
-                )}
-                {!availability.loading && !availability.error && date && !availability.slots.length && (
-                  <p className={styles.notice} role="status">No quedan horarios para esa fecha. Prueba otro día.</p>
-                )}
                 <div className={styles.actions}>
                   <button
                     type="button"
@@ -304,7 +299,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                     Continuar
                   </button>
                   <button type="button" className={styles.simpleButton} onClick={() => go("service")}>
-                    Volver al servicio
+                    Cambiar servicio o profesional
                   </button>
                 </div>
               </>
@@ -313,8 +308,13 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
               <>
                 <h2 tabIndex={-1} ref={heading}>Tus datos de contacto</h2>
                 <p>{readableDate(selectedSlot.date)} a las {selectedSlot.time} · {service.name}</p>
-                <p className={styles.notice}>Estás en una demostración. Usa datos ficticios.</p>
-                <form className={styles.form} onSubmit={reserve} autoComplete="off">
+                <p className={styles.notice}>
+                  Estás en una demostración. Usa datos ficticios.{" "}
+                  <Link href="/privacidad" target="_blank" rel="noreferrer" className={styles.simpleButton}>
+                    Privacidad de la demostración (otra pestaña)
+                  </Link>
+                </p>
+                <form className={styles.form} method="post" action="/api/reservas" onSubmit={reserve} autoComplete="off">
                   <label className={styles.field} htmlFor="booking-name">
                     Nombre completo
                     <input
@@ -323,6 +323,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                       required
                       minLength={2}
                       maxLength={100}
+                      enterKeyHint="next"
                       value={contact.name}
                       onChange={(event) => setContact({ ...contact, name: event.target.value })}
                     />
@@ -337,6 +338,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                         type="tel"
                         minLength={7}
                         maxLength={22}
+                        enterKeyHint="next"
                         value={contact.phone}
                         onChange={(event) => setContact({ ...contact, phone: event.target.value })}
                         placeholder="+51 900 000 000"
@@ -349,6 +351,8 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                         name="email"
                         type="email"
                         maxLength={160}
+                        autoCapitalize="none"
+                        enterKeyHint="done"
                         spellCheck={false}
                         value={contact.email}
                         onChange={(event) => setContact({ ...contact, email: event.target.value })}
@@ -388,7 +392,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
             {step === "review" && hold && (
               <>
                 <h2 tabIndex={-1} ref={heading}>Revisa tu cita</h2>
-                <ScheduleSummary {...hold.appointment} />
+                <ScheduleSummary {...hold.appointment} location={location} />
                 <p><strong>{hold.appointment.patientName}</strong></p>
                 {expired ? (
                   <p className={styles.notice} role="status">Tu turno venció. Tus datos están listos para elegir otro horario.</p>
@@ -398,7 +402,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                     <strong role="timer">
                       {remaining === null ? "…" : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`}
                     </strong>{" "}
-                    min.
+                    min. Tu cita se registra al confirmar.
                   </p>
                 )}
                 {error && <p className={styles.error} role="alert">{error}</p>}
@@ -417,12 +421,18 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
             {step === "confirmed" && hold && appointment && (
               <>
                 <h2 tabIndex={-1} ref={heading}>Tu cita quedó confirmada</h2>
-                <ScheduleSummary {...appointment} />
-                <p className={styles.muted}>Guarda el enlace para consultar o gestionar tu cita.</p>
+                <ScheduleSummary {...appointment} location={location} />
+                <p className={styles.reference}><strong>Referencia</strong> {appointment.id}</p>
+                <p className={styles.muted}>
+                  Guarda el enlace personal. Puedes reprogramar o cancelar antes de la hora de inicio.
+                </p>
                 <div className={styles.actions}>
                   <Link className={styles.primary} href={`/mi-cita/${encodeURIComponent(hold.token)}`}>
                     Ver mi cita
                   </Link>
+                  <a className={styles.secondary} href={calendarHref(appointment)} download="cita-dental.ics">
+                    Agregar al calendario
+                  </a>
                 </div>
               </>
             )}

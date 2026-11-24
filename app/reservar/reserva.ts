@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { addDays, atLima, limaDate, validDate } from "@/lib/clinic-time";
 
 export type Service = {
   id: string;
@@ -75,10 +76,12 @@ export async function bookingRequest<T>(path: string, options: RequestInit = {})
   return data as T;
 }
 
-export function postBooking<T>(path: string, data: object) {
+export function postBooking<T>(path: string, data: object, idempotencyKey?: string) {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (idempotencyKey) headers.set("Idempotency-Key", idempotencyKey);
   return bookingRequest<T>(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(data),
   });
 }
@@ -88,6 +91,9 @@ export function reservationPath(token: string) {
 }
 
 export function bookingMessage(error: unknown) {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return "Se perdió la conexión. Vuelve a intentarlo cuando tengas internet.";
+  }
   return error instanceof BookingError
     ? error.message
     : "No pudimos conectar con el consultorio. Intenta de nuevo.";
@@ -100,20 +106,21 @@ const dateFormatter = new Intl.DateTimeFormat("es-PE", {
   timeZone: "America/Lima",
 });
 
-const isoFormatter = new Intl.DateTimeFormat("en-CA", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: "America/Lima",
-});
-
 const priceFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
   currency: "PEN",
 });
 
 export function todayInLima() {
-  return isoFormatter.format(new Date());
+  return limaDate();
+}
+
+export function lastBookingDay(today: string) {
+  return addDays(today, 90);
+}
+
+export function isBookingDay(date: string, today: string) {
+  return validDate(date) && date >= today && date <= lastBookingDay(today);
 }
 
 export function readableDate(date: string) {
@@ -128,19 +135,71 @@ export function slotKey(slot: Slot) {
   return `${slot.time}|${slot.professionalId}`;
 }
 
+export function appointmentDuration(appointment: Pick<Appointment, "date" | "time" | "endTime">) {
+  return (atLima(appointment.date, appointment.endTime).getTime() - atLima(appointment.date, appointment.time).getTime()) / 60_000;
+}
+
+export function appointmentHasStarted(appointment: Pick<Appointment, "date" | "time">) {
+  return atLima(appointment.date, appointment.time).getTime() <= Date.now();
+}
+
+export function calendarHref(appointment: Pick<Appointment, "id" | "date" | "time" | "endTime">) {
+  const utc = (date: Date) => date.toISOString().replace(/[-:]|\.\d{3}/g, "");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Gomez Delgado//Citas//ES",
+    "BEGIN:VEVENT",
+    `UID:${appointment.id.replace(/[^a-z0-9-]/gi, "")}@citas.local`,
+    `DTSTAMP:${utc(new Date())}`,
+    `DTSTART:${utc(atLima(appointment.date, appointment.time))}`,
+    `DTEND:${utc(atLima(appointment.date, appointment.endTime))}`,
+    "SUMMARY:Cita dental",
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+}
+
 type AvailabilityResult = { request: string; slots: Slot[]; error: string };
+
+function availabilityQuery(date: string, serviceId: string, professionalId: string) {
+  return new URLSearchParams({ date, serviceId, professionalId }).toString();
+}
+
+function fetchSlots(query: string, signal: AbortSignal) {
+  return bookingRequest<{ slots: Slot[] }>(`/api/disponibilidad?${query}`, { signal });
+}
+
+export async function nextDayWithSlots(
+  from: string,
+  serviceId: string,
+  professionalId: string,
+  signal: AbortSignal,
+) {
+  const last = lastBookingDay(todayInLima());
+  for (let offset = 1; offset <= 7; offset++) {
+    const date = addDays(from, offset);
+    if (date > last) break;
+    const { slots } = await fetchSlots(availabilityQuery(date, serviceId, professionalId), signal);
+    if (slots.length) return date;
+  }
+  return null;
+}
 
 export function useSlots(date: string, serviceId: string, professionalId: string, active: boolean) {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<AvailabilityResult | null>(null);
-  const query = new URLSearchParams({ date, serviceId, professionalId }).toString();
-  const request = active && date && serviceId ? `${query}|${attempt}` : "";
+  const query = availabilityQuery(date, serviceId, professionalId);
+  const request = active && serviceId && isBookingDay(date, todayInLima()) ? `${query}|${attempt}` : "";
 
   useEffect(() => {
     if (!request) return;
     const controller = new AbortController();
 
-    bookingRequest<{ slots: Slot[] }>(`/api/disponibilidad?${query}`, { signal: controller.signal })
+    fetchSlots(query, controller.signal)
       .then(({ slots }) => {
         if (!controller.signal.aborted) setResult({ request, slots, error: "" });
       })

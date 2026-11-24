@@ -47,4 +47,12 @@
 - **Fecha y responsable.** 2026-11-23. GPT preparó los diseños. El consultorio valida las políticas.
 - **Propuesta.** Alcance clínico por recurso y paciente, con auditoría de lecturas y escrituras. Confirmación de la reserva ordinaria al cerrar el formulario antes del vencimiento y validación posterior del abono.
 - **Pendiente.** Acordar responsables, permisos, reglas de retención y operación con adjuntos. Aprobar depósitos, cancelaciones y tratamiento de saldos antes de convertir los diseños en reglas del sistema.
+
+## ADE-D007 · Presentación y disponibilidad de la demostración
+
+24 de noviembre de 2026. La portada conserva la identidad de Gómez Delgado y usa una escena original identificada como ilustrativa. La reserva es la acción principal y los detalles del catálogo preservan el servicio elegido al continuar. Las preguntas frecuentes se abren con HTML nativo. La consulta del primer turno se activa por solicitud del paciente, consultando la agenda sin retener el horario. [Benchmark](../docs/research/DENTAL_WEBSITE_BENCHMARK.md) · [Auditoría UX](../docs/design/UX_AUDIT.md)
+
+## ADE-D008 · Retención, gestión e idempotencia de prueba
+
+24 de noviembre de 2026. La retención vence al inicio de la cita o al llegar a diez minutos, lo que ocurra primero. La gestión pública de cambios termina al iniciar la cita y el enlace vence 24 horas después de su fin. La versión demo guarda la huella inicial para que editar el contacto no cambie el resultado de un reintento. La columna añadida mantiene compatibilidad con las reservas anteriores. El plazo definitivo del enlace requiere validación del consultorio. [Auditoría defensiva](../docs/security/SECURITY_AUDIT.md)
 - **Evidencia.** [Acceso clínico](../docs/requirements/clinical-access-proposal.md) · [Confirmación y pagos](../docs/database/appointment-payments-proposal.md)

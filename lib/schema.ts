@@ -31,6 +31,7 @@ export const baseSchema = `
     EXCLUDE USING gist (professional_id WITH =, tstzrange(starts_at, occupied_until, '[)') WITH &&)
       WHERE (status IN ('PENDING','CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED'))
   );
+  ALTER TABLE appointments ADD COLUMN IF NOT EXISTS hold_request_hash text;
   CREATE INDEX IF NOT EXISTS appointments_by_patient ON appointments(patient_id, starts_at DESC);
   CREATE INDEX IF NOT EXISTS appointments_by_date ON appointments(starts_at, professional_id);
   CREATE TABLE IF NOT EXISTS agenda_blocks (

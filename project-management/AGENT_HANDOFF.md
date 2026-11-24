@@ -39,3 +39,14 @@ Orca registra los resultados de los trabajadores de ADE-005 y ADE-006. Los mensa
 ## Versión 1.0.1
 
 GPT coordinó el run `run_eb6555b3c912`. Antigravity entregó la landing y sus ilustraciones en `6295d1a`. OpenCode 2 entregó las vistas de clínica y pagos en `7130936`. Claude carecía de sesión y el modelo gratuito de OpenCode alcanzó su límite. Tareas de Codex sustituyeron esas asignaciones y verificaron los contratos entre interfaz y servidor. [Recorridos y pruebas](../README.md)
+
+## Ciclo ADE-012 del 2026-11-24
+
+| Frente | Agente y selección | Entrega y revisión |
+| --- | --- | --- |
+| Investigación UX y CRO | Codex, agente de investigación con modelo heredado | Benchmark, fuentes de comportamiento y mediciones comparables solo cuando el acceso lo permitió. |
+| Reserva y línea base | Codex, agente de reserva con modelo heredado | Captura de la línea base y flujos de fecha, horarios, idempotencia y calendario. Revisados con Playwright y la API integrada. |
+| Backend y seguridad | Codex, agente backend con modelo heredado | Límites locales, caducidad, disponibilidad y revisión de permisos. Las regresiones se integraron en la suite de la coordinación. |
+| Supervisión independiente | Codex `gpt-6.2-sol`, selección predeterminada de Orca para una revisión acotada de solo lectura | Run `run_eb6555b3c912`, tarea `task_9dadfa953e27`, despacho `ctx_6acc78cc1d1d`. Reportó un bloqueante de reintentos y cuatro observaciones. Se corrigieron y volvieron a comprobar al integrar. |
+
+Se reutilizaron los agentes disponibles para trabajar por módulos independientes. La coordinación conservó la integración y las pruebas como una sola responsabilidad. ImageGen integrado generó la fotografía de la portada. La ejecución no expone telemetría comparable de costo y tokens de los agentes. [Evidencia de QA](QA_REPORT.md)

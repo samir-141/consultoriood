@@ -85,7 +85,9 @@ async function addPaymentEvent(
   `, [randomUUID(), id, user.id, status, reason]);
 }
 
-async function registerPayment(tx: Transaction, user: Staff, body: Record<string, unknown>) {
+async function registerPayment(
+  tx: Transaction, user: Staff, body: Record<string, unknown>, proof: PrivateFile | null, proofHash: string | null,
+) {
   const patientId = requiredId(body.patientId, "el paciente");
   const appointmentId = optionalId(body.appointmentId, "la cita");
   const planId = optionalId(body.planId, "el plan");
@@ -94,8 +96,6 @@ async function registerPayment(tx: Transaction, user: Staff, body: Record<string
   const method = oneOf(body.method, methods, "el método de pago");
   const reference = requiredText(body.reference, "la referencia del pago", 120);
   const referenceKey = reference.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
-  const proof = readPaymentProof(body);
-  const proofHash = proof ? createHash("sha256").update(proof.content).digest("hex") : null;
 
   const { rows: patients } = await tx.query("SELECT 1 FROM patients WHERE id = $1", [patientId]);
   if (!patients.length) throw new HttpError(404, "No se encontró al paciente.");
@@ -208,7 +208,10 @@ export async function writePayment(request: Request) {
   const body = await readPaymentBody(request);
   const action = oneOf(body.action, reviewActions, "la operación del pago");
   const db = await getDb();
-  return db.transaction((tx) => action === "register" ? registerPayment(tx, user, body) : reviewPayment(tx, user, action, body));
+  if (action !== "register") return db.transaction((tx) => reviewPayment(tx, user, action, body));
+  const proof = readPaymentProof(body);
+  const proofHash = proof ? createHash("sha256").update(proof.content).digest("hex") : null;
+  return db.transaction((tx) => registerPayment(tx, user, body, proof, proofHash));
 }
 
 export async function downloadPaymentProof(request: Request, value: string) {

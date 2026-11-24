@@ -115,3 +115,14 @@ Actualizado el 2026-11-23. Las dependencias se refieren a los identificadores de
 - **Responsables.** GPT coordinó, implementó la base y verificó la integración. Antigravity aportó la landing y los SVG. OpenCode 2 implementó los paneles de clínica y pagos. Codex completó la reserva, la agenda y la integración clínica y de pagos.
 - **Verificación.** Tipos, lint, compilación y prueba de integración reproducible en `npm run verify`. [Arranque](../README.md)
 - **Pendiente para producción.** Datos oficiales, políticas del consultorio, Supabase y credenciales para WhatsApp.
+
+## ADE-012 · Rediseñar y verificar la demostración del consultorio
+
+| Trabajo | Prioridad | Responsable | Criterio de aceptación | Evidencia |
+| --- | --- | --- | --- | --- |
+| Investigar referentes y pacientes | P1 | Agente de investigación | Siete referentes, seis fuentes y limitaciones por escrito. Las hipótesis de conversión requieren validación local. | [Benchmark](../docs/research/DENTAL_WEBSITE_BENCHMARK.md) · [Comportamiento](../docs/research/PATIENT_BEHAVIOR_RESEARCH.md) |
+| Mejorar portada, servicios y reserva | P1 | Coordinación y agente de reserva | Navegación sin desbordamiento, servicio precargado, información práctica y disponibilidad del servidor. | [Auditoría UX](../docs/design/UX_AUDIT.md) · [QA](QA_REPORT.md) |
+| Proteger turnos y accesos | P0 | Agente backend y coordinación | Concurrencia, reintentos, expiración, asignaciones y límites probados con datos sintéticos. | [Auditoría defensiva](../docs/security/SECURITY_AUDIT.md) · [Prueba de integración](../scripts/verify-local.mjs) |
+| Revisar e integrar | P0 | Coordinación y revisor Orca | Comparativa con `b212eaa`, corrección de los hallazgos y verificación integrada antes de avanzar `main`. | [Traspasos](AGENT_HANDOFF.md) · [QA](QA_REPORT.md) |
+
+Los prerrequisitos para el siguiente ciclo figuran en la [hoja de ruta](IMPLEMENTATION_PLAN.md).

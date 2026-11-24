@@ -14,7 +14,7 @@ type Appointment = {
   id: string; patientId: string; patientName: string; serviceId: string; serviceName: string;
   professionalId: string; professionalName: string; status: string; priceCents: number;
   startsAt: Date; endsAt: Date; occupiedUntil: Date; expiresAt: Date | null;
-  manageHash: string | null; optIn: boolean;
+  manageHash: string | null; holdRequestHash: string | null; optIn: boolean;
 };
 type Block = { id: string; professionalId: string; reason: string; startsAt: Date; endsAt: Date };
 type Slot = { date: string; time: string; professionalId: string; professionalName: string };
@@ -25,12 +25,13 @@ const rowColumns = `
     a.professional_id AS "professionalId", a.professional_name AS "professionalName", a.status,
     a.price_cents AS "priceCents", a.starts_at AS "startsAt", a.ends_at AS "endsAt",
     a.occupied_until AS "occupiedUntil", a.hold_expires_at AS "expiresAt",
-    a.manage_hash AS "manageHash", a.opt_in AS "optIn"
+    a.manage_hash AS "manageHash", a.hold_request_hash AS "holdRequestHash", a.opt_in AS "optIn"
     FROM appointments a JOIN patients p ON p.id = a.patient_id
 `;
 const activeCondition = `(status IN ('CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED')
-  OR (status = 'PENDING' AND hold_expires_at > $4))`;
+  OR (status = 'PENDING' AND hold_expires_at > $4 AND starts_at > $4))`;
 const minutes = 60_000;
+export const manageLinkGraceSeconds = 24 * 60 * 60;
 
 function svc(value: unknown) {
   const selected = services.find((service) => service.id === value);
@@ -71,12 +72,13 @@ function withinHours(date: string, start: Date, occupied: Date, now: Date) {
 }
 
 function asAppointment(row: Appointment, now = new Date()) {
-  const status = row.status === "PENDING" && row.expiresAt && new Date(row.expiresAt) <= now ? "EXPIRED" : row.status;
+  const deadline = row.expiresAt ? new Date(Math.min(row.expiresAt.getTime(), row.startsAt.getTime())) : null;
+  const status = row.status === "PENDING" && deadline && deadline <= now ? "EXPIRED" : row.status;
   return {
     id: row.id, date: limaDate(row.startsAt), time: limaTime(row.startsAt), endTime: limaTime(row.endsAt),
     serviceId: row.serviceId, serviceName: row.serviceName, professionalId: row.professionalId,
     professionalName: row.professionalName, patientId: row.patientId, patientName: row.patientName,
-    status, priceCents: row.priceCents, expiresAt: status === "PENDING" ? row.expiresAt : null,
+    status, priceCents: row.priceCents, expiresAt: status === "PENDING" ? deadline : null,
   };
 }
 
@@ -106,7 +108,8 @@ async function writeSchedule<T>(operation: (sql: Sql, now: Date) => Promise<T>) 
     const now = new Date(rows[0].instant);
     await sql.query(`
       WITH expired AS (
-        UPDATE appointments SET status='EXPIRED' WHERE status='PENDING' AND hold_expires_at <= $1 RETURNING id
+        UPDATE appointments SET status='EXPIRED'
+          WHERE status='PENDING' AND (hold_expires_at <= $1 OR starts_at <= $1) RETURNING id
       )
       INSERT INTO appointment_events (id, appointment_id, action)
         SELECT 'exp-' || id, id, 'EXPIRED' FROM expired
@@ -126,14 +129,13 @@ async function overlapping(sql: Sql, professionalId: string, start: Date, end: D
   return result.rows.length > 0;
 }
 
-export async function availability(search: URLSearchParams) {
-  const service = svc(search.get("serviceId"));
-  const possible = candidates(search.get("professionalId") ?? "any", service);
-  const date = validatedDate(search.get("date"));
-  const now = new Date();
-  const starts = atLima(date);
-  const ends = atLima(addDays(date, 1));
-  if (date < limaDate(now) || date > addDays(limaDate(now), 90) || starts.getUTCDay() === 0) return [];
+async function availableSlots(service: Service, possible: Professional[], dates: string[], now: Date, limit = Infinity) {
+  const today = limaDate(now);
+  const horizon = addDays(today, 90);
+  const days = dates.filter((date) => date >= today && date <= horizon && atLima(date).getUTCDay() !== 0);
+  if (!days.length) return [];
+  const starts = atLima(days[0]);
+  const ends = atLima(addDays(days[days.length - 1], 1));
   type Interval = { professionalId: string; startsAt: Date; endsAt: Date };
   const { rows } = await (await getDb()).query<Interval>(`
     SELECT professional_id AS "professionalId", starts_at AS "startsAt", occupied_until AS "endsAt"
@@ -144,15 +146,34 @@ export async function availability(search: URLSearchParams) {
       WHERE professional_id = ANY($1::text[]) AND starts_at < $3 AND ends_at > $2
   `, [possible.map((professional) => professional.id), starts, ends, now]);
   const slots: Slot[] = [];
-  for (let minute = 9 * 60; minute < 17 * 60; minute += 15) {
-    const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
-    const { start, occupied } = durationTimes(date, time, service);
-    if (!withinHours(date, start, occupied, now)) continue;
-    const professional = possible.find(({ id }) => !rows.some((interval) => interval.professionalId === id
-      && start < new Date(interval.endsAt) && occupied > new Date(interval.startsAt)));
-    if (professional) slots.push({ date, time, professionalId: professional.id, professionalName: professional.name });
+  for (const date of days) {
+    for (let minute = 9 * 60; minute < 17 * 60; minute += 15) {
+      const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
+      const { start, occupied } = durationTimes(date, time, service);
+      if (!withinHours(date, start, occupied, now)) continue;
+      const professional = possible.find(({ id }) => !rows.some((interval) => interval.professionalId === id
+        && start < interval.endsAt && occupied > interval.startsAt));
+      if (professional) slots.push({ date, time, professionalId: professional.id, professionalName: professional.name });
+      if (slots.length >= limit) return slots;
+    }
   }
   return slots;
+}
+
+export async function availability(search: URLSearchParams) {
+  const service = svc(search.get("serviceId"));
+  const possible = candidates(search.get("professionalId") ?? "any", service);
+  const date = validatedDate(search.get("date"));
+  return availableSlots(service, possible, [date], new Date());
+}
+
+export async function nextAvailability(search: URLSearchParams) {
+  const service = svc(search.get("serviceId"));
+  const now = new Date();
+  const today = limaDate(now);
+  const dates = Array.from({ length: 7 }, (_, offset) => addDays(today, offset));
+  const [slot] = await availableSlots(service, candidates("any", service), dates, now, 1);
+  return slot ?? null;
 }
 
 async function chooseSlot(sql: Sql, input: Input, service: Service, now: Date) {
@@ -207,33 +228,62 @@ async function notifications(sql: Sql, appointment: Appointment, now: Date) {
 
 async function insertAppointment(sql: Sql, details: {
   patientId: string; service: Service; timing: { start: Date; end: Date; occupied: Date; professional: Professional };
-  status: "CONFIRMED" | "PENDING"; hash?: string | null; expiresAt?: Date; optIn?: boolean; previous?: Appointment;
+  status: "CONFIRMED" | "PENDING"; hash?: string | null; requestHash?: string | null;
+  expiresAt?: Date; optIn?: boolean; previous?: Appointment;
 }) {
   const id = randomUUID();
   const { timing, service, previous } = details;
   await sql.query(`
     INSERT INTO appointments (id,patient_id,service_id,service_name,professional_id,professional_name,
-      starts_at,ends_at,occupied_until,price_cents,status,hold_expires_at,manage_hash,opt_in,previous_id)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      starts_at,ends_at,occupied_until,price_cents,status,hold_expires_at,manage_hash,opt_in,previous_id,hold_request_hash)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
   `, [id, details.patientId, service.id, service.name, timing.professional.id, timing.professional.name,
     timing.start, timing.end, timing.occupied, previous?.priceCents ?? service.priceCents,
-    details.status, details.expiresAt ?? null, details.hash ?? null, details.optIn ?? false, previous?.id ?? null]);
+    details.status, details.expiresAt ?? null, details.hash ?? null, details.optIn ?? false, previous?.id ?? null,
+    details.requestHash ?? null]);
   return getAppointment(sql, "a.id", id);
 }
 
-export async function hold(input: Input) {
+export async function hold(input: Input, idempotencyKey: string | null = null) {
   const patient = patientFields(input);
   const service = svc(input.serviceId);
+  const optIn = input.whatsappOptIn === true;
+  const date = validatedDate(input.date);
+  const time = validatedTime(input.time);
+  const preference = input.professionalId ?? "any";
+  candidates(preference, service);
+  if (idempotencyKey !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    throw new HttpError(400, "La referencia de la reserva no es válida.");
+  }
+  const key = idempotencyKey?.toLowerCase();
+  // Keep the request fingerprint independent of later edits to the patient's contact details.
+  const patientId = key
+    ? "hold-" + await bookingToken("idempotency:" + key)
+    : randomUUID();
+  const token = await bookingToken(patientId);
+  const requestHash = key
+    ? await bookingToken("hold-input:" + JSON.stringify([key, service.id, date, time, preference, patient, optIn]))
+    : null;
+  const hash = digest(token);
   return writeSchedule(async (sql, now) => {
+    if (key) {
+      const { rows } = await sql.query<Appointment>(rowColumns + " WHERE a.manage_hash=$1", [hash]);
+      const prior = rows[0];
+      if (prior) {
+        if (prior.holdRequestHash === requestHash && prior.expiresAt && (prior.status === "PENDING" || prior.status === "CONFIRMED")) {
+          ensureActiveLink(prior, now);
+          return { appointment: asPublic(prior), token, expiresAt: prior.expiresAt };
+        }
+        throw new HttpError(409, "La referencia corresponde a otra reserva o a un turno que ya terminó.");
+      }
+    }
     const timing = await chooseSlot(sql, input, service, now);
-    const id = randomUUID();
-    const token = await bookingToken(id);
-    const expiresAt = new Date(now.getTime() + 10 * minutes);
+    const expiresAt = new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
     await sql.query("INSERT INTO patients (id,name,phone,email) VALUES ($1,$2,$3,$4)", [
-      id, patient.name, patient.phone, patient.email,
+      patientId, patient.name, patient.phone, patient.email,
     ]);
     const appointment = await insertAppointment(sql, {
-      patientId: id, service, timing, expiresAt, hash: digest(token), optIn: input.whatsappOptIn === true, status: "PENDING",
+      patientId, service, timing, expiresAt, hash, requestHash, optIn, status: "PENDING",
     });
     await record(sql, appointment.id, null, "PENDING");
     return { appointment: asPublic(appointment), token, expiresAt };
@@ -245,9 +295,17 @@ function validToken(token: string) {
   return digest(token);
 }
 
+function ensureActiveLink(appointment: Appointment, now: Date) {
+  if (now.getTime() >= appointment.endsAt.getTime() + manageLinkGraceSeconds * 1000) {
+    throw new HttpError(410, "El enlace de gestión venció. Contacta a recepción si necesitas ayuda.");
+  }
+}
+
 export async function patientAppointment(token: string) {
   const hash = validToken(token);
-  return asPublic(await getAppointment(await getDb(), "a.manage_hash", hash));
+  const current = await getAppointment(await getDb(), "a.manage_hash", hash);
+  ensureActiveLink(current, new Date());
+  return asPublic(current);
 }
 
 async function cancel(sql: Sql, current: Appointment, user: User | null, reason: string | null) {
@@ -286,11 +344,16 @@ export async function manageAppointment(token: string, input: Input) {
   const hash = validToken(token);
   const updated = await writeSchedule(async (sql, now) => {
     const current = await getAppointment(sql, "a.manage_hash", hash);
+    ensureActiveLink(current, now);
     if (current.status === "EXPIRED") return null;
+    if (input.action !== "confirm" && input.action !== "cancel" && input.action !== "reschedule") {
+      throw new HttpError(400, "Selecciona una acción válida.");
+    }
+    if ((input.action === "confirm" && current.status === "CONFIRMED")
+        || (input.action === "cancel" && current.status === "CANCELLED")) return current;
+    if (current.startsAt <= now) throw new HttpError(409, "El turno ya comenzó. Contacta a recepción.");
     if (input.action === "cancel") return cancel(sql, current, null, "Gestión del paciente");
     if (input.action === "reschedule") return move(sql, current, input, null, "Solicitud del paciente", now);
-    if (input.action !== "confirm") throw new HttpError(400, "Selecciona una acción válida.");
-    if (current.status === "CONFIRMED") return current;
     if (current.status !== "PENDING") throw new HttpError(409, "La cita ya no se puede confirmar.");
     await sql.query("UPDATE appointments SET status='CONFIRMED' WHERE id=$1", [current.id]);
     await assign(sql, current);
@@ -391,6 +454,9 @@ export async function changeAgenda(input: Input, user: User) {
     const status = field(input.status, "estado", 30);
     if (status === current.status) return { appointment: asAppointment(current) };
     if (!transitions[current.status]?.includes(status)) throw new HttpError(409, "Esta cita no admite ese cambio de estado.");
+    if (status === "NO_SHOW" && current.startsAt > now) {
+      throw new HttpError(409, "La inasistencia se registra a partir de la hora de la cita.");
+    }
     await sql.query("UPDATE appointments SET status=$1 WHERE id=$2", [status, current.id]);
     if (status === "NO_SHOW") await sql.query(
       "UPDATE whatsapp_jobs SET status='CANCELADO' WHERE appointment_id=$1 AND status='PENDIENTE'", [current.id],
