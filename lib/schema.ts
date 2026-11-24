@@ -12,7 +12,8 @@ export const baseSchema = `
   );
   CREATE TABLE IF NOT EXISTS patients (
     id text PRIMARY KEY, name text NOT NULL, phone text NOT NULL, email text,
-    birth_date date, background text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now()
+    birth_date date, background text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(),
+    dni text
   );
   CREATE TABLE IF NOT EXISTS patient_assignments (
     patient_id text NOT NULL REFERENCES patients(id),
@@ -26,12 +27,25 @@ export const baseSchema = `
     price_cents integer NOT NULL CHECK (price_cents >= 0), previous_id text REFERENCES appointments(id),
     status text NOT NULL CHECK (status IN ('PENDING','CONFIRMED','CANCELLED','EXPIRED','RESCHEDULED','CHECKED_IN','IN_PROGRESS','COMPLETED','NO_SHOW')),
     created_at timestamptz NOT NULL DEFAULT now(),
+    hold_request_hash text,
+    dni text,
+    reason text,
     CHECK (starts_at < ends_at AND ends_at <= occupied_until),
     CHECK (status <> 'PENDING' OR hold_expires_at IS NOT NULL),
     EXCLUDE USING gist (professional_id WITH =, tstzrange(starts_at, occupied_until, '[)') WITH &&)
       WHERE (status IN ('PENDING','CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED'))
   );
   ALTER TABLE appointments ADD COLUMN IF NOT EXISTS hold_request_hash text;
+  ALTER TABLE appointments ADD COLUMN IF NOT EXISTS dni text;
+  ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reason text;
+  ALTER TABLE patients ADD COLUMN IF NOT EXISTS dni text;
+
+  CREATE OR REPLACE VIEW reservas AS
+    SELECT id, patient_id, service_id, service_name, professional_id, professional_name,
+      starts_at, ends_at, occupied_until, hold_expires_at, manage_hash, opt_in,
+      price_cents, previous_id, status, created_at, hold_request_hash, dni, reason
+    FROM appointments;
+
   CREATE INDEX IF NOT EXISTS appointments_by_patient ON appointments(patient_id, starts_at DESC);
   CREATE INDEX IF NOT EXISTS appointments_by_date ON appointments(starts_at, professional_id);
   CREATE TABLE IF NOT EXISTS agenda_blocks (

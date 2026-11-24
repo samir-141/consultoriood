@@ -14,3 +14,12 @@ npm-debug.log*
 /.vercel/
 *.pem
 *.key
+
+# Test artifacts & local tooling
+/test-results/
+/playwright-report/
+/reports/screenshots/
+/.agents/
+/.aider-desk/
+/skills-lock.json
+

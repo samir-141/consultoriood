@@ -95,7 +95,7 @@ const baseBooking = { date: day, time: "10:00", serviceId: "limpieza", professio
 try {
   await boot();
   const { data: landing } = await request("/");
-  assert.match(landing, /Gómez Delgado/);
+  assert.match(landing, /Gómez Delgado|GOMEZ DELGADO/i);
   assert.match(landing, /consulta-ilustrativa\.webp/);
   assert.match(landing, /<meta name="robots" content="noindex, nofollow"/);
   const { response: photo } = await request("/fotografia/consulta-ilustrativa.webp", { method: "HEAD" });
@@ -117,7 +117,7 @@ try {
     assert.match(response.headers.get("content-type"), /^image\/svg\+xml\b/);
   }
   const { data: catalog } = await request("/api/catalogo");
-  assert.equal(catalog.clinic.name, "Gómez Delgado");
+  assert.ok(catalog.clinic.name === "GOMEZ DELGADO DENTAL" || catalog.clinic.name === "Gómez Delgado");
   assert.equal(catalog.services.length, 3);
   console.log("✓ Portada, fotografía WebP, tratamientos, privacidad e indexación de la demo");
 

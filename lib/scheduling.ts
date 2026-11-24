@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { clinic, schedule } from "../config/site";
 import { bookingToken } from "./booking-token";
 import { professionals, services } from "./catalog";
 import { addDays, atLima, limaDate, limaTime, validDate, validTime } from "./clinic-time";
@@ -15,6 +16,7 @@ type Appointment = {
   professionalId: string; professionalName: string; status: string; priceCents: number;
   startsAt: Date; endsAt: Date; occupiedUntil: Date; expiresAt: Date | null;
   manageHash: string | null; holdRequestHash: string | null; optIn: boolean;
+  dni?: string | null; reason?: string | null;
 };
 type Block = { id: string; professionalId: string; reason: string; startsAt: Date; endsAt: Date };
 type Slot = { date: string; time: string; professionalId: string; professionalName: string };
@@ -25,7 +27,8 @@ const rowColumns = `
     a.professional_id AS "professionalId", a.professional_name AS "professionalName", a.status,
     a.price_cents AS "priceCents", a.starts_at AS "startsAt", a.ends_at AS "endsAt",
     a.occupied_until AS "occupiedUntil", a.hold_expires_at AS "expiresAt",
-    a.manage_hash AS "manageHash", a.hold_request_hash AS "holdRequestHash", a.opt_in AS "optIn"
+    a.manage_hash AS "manageHash", a.hold_request_hash AS "holdRequestHash", a.opt_in AS "optIn",
+    a.dni AS "dni", a.reason AS "reason"
     FROM appointments a JOIN patients p ON p.id = a.patient_id
 `;
 const activeCondition = `(status IN ('CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED')
@@ -58,17 +61,77 @@ function validatedTime(value: unknown, label = "hora") {
   return time;
 }
 
+const openingTime = `${String(schedule.openingHour).padStart(2, "0")}:00`;
+const closingTime = `${String(schedule.closingHour).padStart(2, "0")}:00`;
+
 function durationTimes(date: string, time: string, service: Service) {
   const start = atLima(date, time);
   const end = new Date(start.getTime() + service.duration * minutes);
-  const occupied = new Date(end.getTime() + 10 * minutes);
+  const occupied = new Date(end.getTime() + schedule.bufferMinutes * minutes);
   return { start, end, occupied };
 }
 
+function minAdvanceInstant(now: Date) {
+  return new Date(now.getTime() + schedule.minAdvanceMinutes * minutes);
+}
+
 function withinHours(date: string, start: Date, occupied: Date, now: Date) {
-  return date >= limaDate(now) && date <= addDays(limaDate(now), 90)
-    && atLima(date).getUTCDay() !== 0 && start >= atLima(date, "09:00")
-    && start > now && occupied <= atLima(date, "17:00");
+  const today = limaDate(now);
+  return date >= today
+    && date <= addDays(today, schedule.horizonDays)
+    && schedule.workingDays.includes(atLima(date).getUTCDay())
+    && start >= atLima(date, openingTime)
+    && start >= minAdvanceInstant(now)
+    && occupied <= atLima(date, closingTime);
+}
+
+function evaluateDayStatus(date: string, availableCount: number, now: Date) {
+  const today = limaDate(now);
+  const horizon = addDays(today, schedule.horizonDays);
+  const isWorking = schedule.workingDays.includes(atLima(date).getUTCDay());
+  const closing = atLima(date, closingTime);
+
+  if (date < today) {
+    return { reservable: false, status: "PAST" as const, walkInAvailable: false, walkInMessage: null };
+  }
+  if (date > horizon) {
+    return { reservable: false, status: "OUT_OF_RANGE" as const, walkInAvailable: false, walkInMessage: null };
+  }
+  if (!isWorking) {
+    return { reservable: false, status: "CLOSED" as const, walkInAvailable: false, walkInMessage: null };
+  }
+
+  const isToday = date === today;
+  const clinicStillOpenToday = isToday && now < closing;
+
+  if (availableCount > 0) {
+    return {
+      reservable: true,
+      status: "AVAILABLE" as const,
+      walkInAvailable: clinicStillOpenToday,
+      walkInMessage: clinicStillOpenToday ? clinic.walkInNotice : null,
+    };
+  }
+
+  if (isToday) {
+    if (clinicStillOpenToday) {
+      return {
+        reservable: false,
+        status: "CUTOFF_WALKIN" as const,
+        walkInAvailable: true,
+        walkInMessage: clinic.walkInNotice,
+      };
+    }
+    return {
+      reservable: false,
+      status: "AFTER_HOURS" as const,
+      walkInAvailable: false,
+      walkInMessage:
+        "Las reservas web de hoy finalizaron. En horario de atención también se aceptan consultas presenciales en el consultorio (con posible espera).",
+    };
+  }
+
+  return { reservable: false, status: "FULL" as const, walkInAvailable: false, walkInMessage: null };
 }
 
 function asAppointment(row: Appointment, now = new Date()) {
@@ -79,6 +142,7 @@ function asAppointment(row: Appointment, now = new Date()) {
     serviceId: row.serviceId, serviceName: row.serviceName, professionalId: row.professionalId,
     professionalName: row.professionalName, patientId: row.patientId, patientName: row.patientName,
     status, priceCents: row.priceCents, expiresAt: status === "PENDING" ? deadline : null,
+    dni: row.dni ?? null, reason: row.reason ?? null,
   };
 }
 
@@ -131,8 +195,8 @@ async function overlapping(sql: Sql, professionalId: string, start: Date, end: D
 
 async function availableSlots(service: Service, possible: Professional[], dates: string[], now: Date, limit = Infinity) {
   const today = limaDate(now);
-  const horizon = addDays(today, 90);
-  const days = dates.filter((date) => date >= today && date <= horizon && atLima(date).getUTCDay() !== 0);
+  const horizon = addDays(today, schedule.horizonDays);
+  const days = dates.filter((date) => date >= today && date <= horizon && schedule.workingDays.includes(atLima(date).getUTCDay()));
   if (!days.length) return [];
   const starts = atLima(days[0]);
   const ends = atLima(addDays(days[days.length - 1], 1));
@@ -147,7 +211,7 @@ async function availableSlots(service: Service, possible: Professional[], dates:
   `, [possible.map((professional) => professional.id), starts, ends, now]);
   const slots: Slot[] = [];
   for (const date of days) {
-    for (let minute = 9 * 60; minute < 17 * 60; minute += 15) {
+    for (let minute = schedule.openingHour * 60; minute < schedule.closingHour * 60; minute += schedule.slotMinutes) {
       const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
       const { start, occupied } = durationTimes(date, time, service);
       if (!withinHours(date, start, occupied, now)) continue;
@@ -167,6 +231,115 @@ export async function availability(search: URLSearchParams) {
   return availableSlots(service, possible, [date], new Date());
 }
 
+export async function dailyReservasAvailability(search: URLSearchParams) {
+  const serviceParam = search.get("servicio") ?? search.get("serviceId") ?? services[0].id;
+  const service = svc(serviceParam);
+  const preference = search.get("profesional") ?? search.get("professionalId") ?? "any";
+  const possible = candidates(preference, service);
+  const rawDate = search.get("fecha") ?? search.get("date") ?? limaDate();
+  const date = validatedDate(rawDate);
+  const now = new Date();
+
+  const slots = await availableSlots(service, possible, [date], now);
+  const dayState = evaluateDayStatus(date, slots.length, now);
+
+  const allDayTimes: string[] = [];
+  for (let minute = schedule.openingHour * 60; minute < schedule.closingHour * 60; minute += schedule.slotMinutes) {
+    const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
+    allDayTimes.push(time);
+  }
+
+  const availableSet = new Set(slots.map((s) => s.time));
+  const occupiedSlots = allDayTimes.filter((t) => !availableSet.has(t));
+
+  return {
+    fecha: date,
+    date,
+    servicio: service.id,
+    serviceId: service.id,
+    profesional: preference,
+    professionalId: preference,
+    reservable: dayState.reservable,
+    estadoDia: dayState.status,
+    minAdvanceMinutes: schedule.minAdvanceMinutes,
+    walkInDisponible: dayState.walkInAvailable,
+    mensajeWalkIn: dayState.walkInMessage,
+    horariosDisponibles: slots.map((s) => s.time),
+    horariosOcupados: occupiedSlots,
+    slots,
+  };
+}
+
+export async function monthlyReservasAvailability(search: URLSearchParams) {
+  const serviceParam = search.get("servicio") ?? search.get("serviceId") ?? services[0].id;
+  const service = svc(serviceParam);
+  const preference = search.get("profesional") ?? search.get("professionalId") ?? "any";
+  const possible = candidates(preference, service);
+  const now = new Date();
+  const today = limaDate(now);
+  const monthParam = search.get("mes") ?? search.get("month") ?? today.slice(0, 7);
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam)) {
+    throw new HttpError(400, "El mes debe tener el formato YYYY-MM.");
+  }
+
+  const year = Number(monthParam.slice(0, 4));
+  const monthIndex = Number(monthParam.slice(5, 7)) - 1;
+  const totalDays = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  const monthDates = Array.from({ length: totalDays }, (_, idx) => `${monthParam}-${String(idx + 1).padStart(2, "0")}`);
+
+  const monthSlots = await availableSlots(service, possible, monthDates, now);
+  const counts = new Map<string, number>();
+  for (const slot of monthSlots) {
+    counts.set(slot.date, (counts.get(slot.date) ?? 0) + 1);
+  }
+
+  const days: Record<
+    string,
+    { date: string; availableCount: number; reservable: boolean; status: string; walkInAvailable: boolean }
+  > = {};
+
+  for (const date of monthDates) {
+    const count = counts.get(date) ?? 0;
+    const state = evaluateDayStatus(date, count, now);
+    days[date] = {
+      date,
+      availableCount: count,
+      reservable: state.reservable,
+      status: state.status,
+      walkInAvailable: state.walkInAvailable,
+    };
+  }
+
+  let nextAvailableDate =
+    monthDates.find((d) => d >= today && (counts.get(d) ?? 0) > 0) ?? null;
+
+  if (!nextAvailableDate) {
+    const upcomingDates = Array.from({ length: 30 }, (_, offset) => addDays(today, offset));
+    const [nextSlot] = await availableSlots(service, possible, upcomingDates, now, 1);
+    nextAvailableDate = nextSlot?.date ?? null;
+  }
+
+  const todayCount = counts.get(today) ?? 0;
+  const todayState = evaluateDayStatus(today, todayCount, now);
+
+  return {
+    mes: monthParam,
+    month: monthParam,
+    today,
+    servicio: service.id,
+    serviceId: service.id,
+    profesional: preference,
+    professionalId: preference,
+    minAdvanceMinutes: schedule.minAdvanceMinutes,
+    nextAvailableDate,
+    todayStatus: todayState.status,
+    walkInToday: todayState.walkInAvailable,
+    walkInMessage: todayState.walkInMessage,
+    days,
+  };
+}
+
 export async function nextAvailability(search: URLSearchParams) {
   const service = svc(search.get("serviceId"));
   const now = new Date();
@@ -180,8 +353,28 @@ async function chooseSlot(sql: Sql, input: Input, service: Service, now: Date) {
   const date = validatedDate(input.date);
   const time = validatedTime(input.time);
   const timing = durationTimes(date, time, service);
-  if (!withinHours(date, timing.start, timing.occupied, now) || Number(time.slice(3)) % 15 !== 0) {
-    throw new HttpError(409, "Ese turno queda fuera de los horarios de reserva.");
+  const today = limaDate(now);
+  const isWorkingDay = schedule.workingDays.includes(atLima(date).getUTCDay());
+  const opening = atLima(date, openingTime);
+  const closing = atLima(date, closingTime);
+  const minAdvance = minAdvanceInstant(now);
+
+  if (
+    date === today
+    && isWorkingDay
+    && timing.start >= opening
+    && timing.occupied <= closing
+    && timing.start > now
+    && timing.start < minAdvance
+  ) {
+    throw new HttpError(
+      409,
+      `Las reservas web requieren al menos ${schedule.minAdvanceMinutes} minutos de anticipación. ${clinic.walkInNotice}`,
+    );
+  }
+
+  if (!withinHours(date, timing.start, timing.occupied, now) || Number(time.slice(3)) % schedule.slotMinutes !== 0) {
+    throw new HttpError(409, "Ese turno queda fuera de los horarios de reserva o el día ya no admite reservas web.");
   }
   const list = candidates(input.professionalId ?? "any", service);
   for (const professional of list) {
@@ -230,17 +423,18 @@ async function insertAppointment(sql: Sql, details: {
   patientId: string; service: Service; timing: { start: Date; end: Date; occupied: Date; professional: Professional };
   status: "CONFIRMED" | "PENDING"; hash?: string | null; requestHash?: string | null;
   expiresAt?: Date; optIn?: boolean; previous?: Appointment;
+  dni?: string | null; reason?: string | null;
 }) {
   const id = randomUUID();
   const { timing, service, previous } = details;
   await sql.query(`
     INSERT INTO appointments (id,patient_id,service_id,service_name,professional_id,professional_name,
-      starts_at,ends_at,occupied_until,price_cents,status,hold_expires_at,manage_hash,opt_in,previous_id,hold_request_hash)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      starts_at,ends_at,occupied_until,price_cents,status,hold_expires_at,manage_hash,opt_in,previous_id,hold_request_hash,dni,reason)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
   `, [id, details.patientId, service.id, service.name, timing.professional.id, timing.professional.name,
     timing.start, timing.end, timing.occupied, previous?.priceCents ?? service.priceCents,
     details.status, details.expiresAt ?? null, details.hash ?? null, details.optIn ?? false, previous?.id ?? null,
-    details.requestHash ?? null]);
+    details.requestHash ?? null, details.dni ?? null, details.reason ?? null]);
   return getAppointment(sql, "a.id", id);
 }
 
@@ -252,6 +446,13 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
   const time = validatedTime(input.time);
   const preference = input.professionalId ?? "any";
   candidates(preference, service);
+  const dni = typeof input.dni === "string" && input.dni.trim()
+    ? input.dni.trim()
+    : (typeof input.phone === "string" && /^\d{8}$/.test(input.phone.trim()) ? input.phone.trim() : null);
+  const reason = typeof input.reason === "string"
+    ? input.reason.trim()
+    : (typeof input.motivo === "string" ? input.motivo.trim() : null);
+
   if (idempotencyKey !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
     throw new HttpError(400, "La referencia de la reserva no es válida.");
   }
@@ -279,11 +480,11 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
     }
     const timing = await chooseSlot(sql, input, service, now);
     const expiresAt = new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
-    await sql.query("INSERT INTO patients (id,name,phone,email) VALUES ($1,$2,$3,$4)", [
-      patientId, patient.name, patient.phone, patient.email,
+    await sql.query("INSERT INTO patients (id,name,phone,email,dni) VALUES ($1,$2,$3,$4,$5)", [
+      patientId, patient.name, patient.phone, patient.email, dni,
     ]);
     const appointment = await insertAppointment(sql, {
-      patientId, service, timing, expiresAt, hash, requestHash, optIn, status: "PENDING",
+      patientId, service, timing, expiresAt, hash, requestHash, optIn, status: "PENDING", dni, reason,
     });
     await record(sql, appointment.id, null, "PENDING");
     return { appointment: asPublic(appointment), token, expiresAt };

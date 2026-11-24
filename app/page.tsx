@@ -2,71 +2,70 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ClinicBrand } from "@/app/components/clinic-brand";
-import { NextAppointment } from "@/app/components/next-appointment";
 import { PublicIcon } from "@/app/components/public-icon";
-import { clinic, professionals } from "@/lib/catalog";
-import { heroPhoto, publicDescription, publicServices, servicePrice } from "./public-content";
+import { clinic, openingHours, professionals, services } from "@/config/site";
+import { heroPhoto, publicDescription, servicePrice } from "./public-content";
 import { publicSiteOrigin } from "./public-url";
 import styles from "./landing.module.css";
 
 const origin = publicSiteOrigin();
+const leadDoctor = professionals[0];
 
 export const metadata: Metadata = {
-  title: "Clínica dental en Lima",
+  title: `${clinic.name} · Odontología en Huamanga, Ayacucho`,
   description: publicDescription,
   ...(origin && { alternates: { canonical: origin } }),
   openGraph: {
-    title: "Gómez Delgado Clínica Dental",
-    description: publicDescription,
+    title: `${clinic.name} - ${leadDoctor.name}`,
+    description: clinic.valueProposition,
     type: "website",
     locale: "es_PE",
     siteName: clinic.name,
     ...(origin && {
       url: origin,
-      images: [{ url: new URL(heroPhoto, origin), alt: "Imagen ilustrativa de una consulta dental" }],
+      images: [{ url: new URL(heroPhoto, origin), alt: "Consulta Odontológica en Huamanga" }],
     }),
   },
 };
 
-const evaluation = publicServices.find(({ id }) => id === "evaluacion");
-const publicHours = clinic.hours.replaceAll(". m.", ".\u00a0m.");
-
 const questions = [
   {
-    question: "¿Cuánto cuesta y cuánto dura una evaluación?",
-    answer: evaluation
-      ? `La evaluación del catálogo de demostración dura ${evaluation.duration} minutos y tiene un precio referencial de ${servicePrice(evaluation.priceCents)}. El profesional puede explicarte las alternativas y los costos antes de continuar.`
-      : "Revisa el catálogo para consultar las duraciones y los precios referenciales.",
+    question: "¿Cuánto cuesta y cuánto dura una evaluación dental?",
+    answer:
+      "La evaluación dental dura 30 minutos y tiene un costo referencial de S/ 80.00. Incluye diagnóstico visual integral, revisión de historial clínico y presupuesto detallado.",
   },
   {
     question: "¿Cómo reservo una cita?",
-    answer: "Elige un servicio, selecciona un horario disponible y confirma la reserva después de revisar tus datos.",
+    answer:
+      "Elige el día en nuestro calendario, consulta los horarios disponibles en tiempo real, ingresa tus datos básicos y confirma tu turno de manera inmediata.",
   },
   {
     question: "¿Cómo cambio o cancelo mi cita?",
-    answer: "Abre el enlace que aparece al confirmar la reserva. Desde allí puedes revisar tu cita y consultar las opciones para cambiarla o cancelarla.",
+    answer:
+      "Al reservar recibirás un enlace exclusivo para consultar, reprogramar o cancelar tu turno con total comodidad.",
   },
   {
-    question: "¿Qué llevo a la primera visita?",
-    answer: "Puedes llevar tus indicaciones previas y anotar las preguntas que quieras hacer durante la consulta.",
-  },
-  {
-    question: "¿Puedo consultar por atención infantil, urgencias o medios de pago?",
-    answer: "Estos datos requieren confirmación del consultorio. El catálogo de demostración muestra las prestaciones disponibles para practicar el flujo de reserva.",
+    question: "¿Dónde queda la clínica en Huamanga?",
+    answer: `Nos ubicamos en la ciudad de Huamanga, Ayacucho, Perú. ${clinic.addressPlaceholder}.`,
   },
 ];
 
 export default function HomePage() {
   return (
     <div className={styles.site}>
-      <a href="#contenido" className={styles.skip}>Saltar al contenido</a>
+      <a href="#contenido" className={styles.skip}>
+        Saltar al contenido
+      </a>
+
+      {/* Navegación Pública (Sin enlaces a login ni admin) */}
       <header className={styles.top}>
         <div className={`shell ${styles.header}`}>
           <ClinicBrand />
           <nav className={styles.navigation} aria-label="Navegación principal">
             <a href="#servicios">Servicios</a>
-            <a href="#primera-visita">Primera visita</a>
-            <a href="#ubicacion">Ubicación</a>
+            <a href="#profesional">El Profesional</a>
+            <a href="#ubicacion">Ubicación y Horario</a>
+            <a href="#contacto">Contacto</a>
           </nav>
           <Link className={styles.headerAction} href="/reservar">
             Reservar cita <PublicIcon name="arrow" />
@@ -75,142 +74,250 @@ export default function HomePage() {
       </header>
 
       <main id="contenido" tabIndex={-1}>
-        <section className={`shell ${styles.hero}`} aria-labelledby="home-title">
-          <div className={styles.heroCopy}>
-            <p className={styles.location}><PublicIcon name="location" />{clinic.location}</p>
-            <h1 id="home-title">Tu salud dental, <em>paso a paso.</em></h1>
-            <p className={styles.lead}>Conoce tus opciones de atención, elige un horario y llega a tu consulta con tus preguntas claras.</p>
-            <div className={styles.actions}>
-              <Link href="/reservar" className="button">Reservar cita <PublicIcon name="arrow" /></Link>
-              <a href="#servicios" className={styles.textLink}>Ver servicios</a>
+        {/* HERO A PANTALLA COMPLETA (100svh) */}
+        <section className={styles.heroContainer} aria-labelledby="hero-title">
+          <div className={styles.heroSplit}>
+            <div className={styles.heroCopyWrap}>
+              <div className={styles.heroCopy}>
+                <div className={styles.badge}>
+                  <PublicIcon name="location" />
+                  <span>{clinic.location}</span>
+                </div>
+
+                <div className={styles.professionalIntro}>
+                  <span className={styles.professionalTitle}>{leadDoctor.title}</span>
+                  <h1 id="hero-title" className={styles.professionalName}>
+                    {leadDoctor.name}
+                  </h1>
+                  <p className={styles.clinicTagline}>{clinic.heroHeadline}</p>
+                </div>
+
+                <p className={styles.heroLead}>{clinic.valueProposition}</p>
+
+                <div className={styles.heroActions}>
+                  <Link href="/reservar" className="button">
+                    Reservar cita <PublicIcon name="arrow" />
+                  </Link>
+                  <a href="#servicios" className="button-secondary">
+                    Ver tratamientos
+                  </a>
+                </div>
+
+                <div className={styles.heroPillars}>
+                  <div className={styles.pillarItem}>
+                    <PublicIcon name="shield" />
+                    <span>Atención sin dolor</span>
+                  </div>
+                  <div className={styles.pillarItem}>
+                    <PublicIcon name="check" />
+                    <span>Tecnología moderna</span>
+                  </div>
+                  <div className={styles.pillarItem}>
+                    <PublicIcon name="clock" />
+                    <span>Puntualidad en tu cita</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            {clinic.demo && <p className={styles.demo}>Demostración. Usa datos ficticios al reservar.</p>}
+
+            <div className={styles.heroImageWrap}>
+              <Image
+                src={heroPhoto}
+                alt="Atención odontológica en consultorio dental Gómez Delgado"
+                fill
+                sizes="(max-width: 960px) 100vw, 50vw"
+                className={styles.heroImage}
+                priority
+              />
+              <div className={styles.heroImageBadge}>
+                <PublicIcon name="shield" />
+                <div>
+                  <strong>{clinic.name}</strong>
+                  <span>Huamanga, Ayacucho</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <figure className={styles.heroArt}>
-            <Image
-              src={heroPhoto}
-              width={1440}
-              height={960}
-              sizes="(max-width: 48rem) calc(100vw - 2rem), (max-width: 74rem) 52vw, 600px"
-              alt="Una paciente sonríe mientras conversa con una profesional en un consultorio dental."
-              loading="eager"
-              fetchPriority="high"
-            />
-            <figcaption>Imagen ilustrativa</figcaption>
-          </figure>
         </section>
 
-        <div className={`shell ${styles.practical}`}>
-          <div>
-            <span className={styles.icon}><PublicIcon name="clock" /></span>
-            <div><p>Horario de atención</p><span>{publicHours}</span></div>
-          </div>
-          <div>
-            <span className={styles.icon}><PublicIcon name="location" /></span>
-            <div><p>Ubicación</p><span>{clinic.location}</span></div>
-          </div>
-          <div>
-            <span className={styles.icon}><PublicIcon name="calendar" /></span>
-            <div><p>¿Ya tienes un turno?</p><Link className={styles.textLink} href="/mi-cita">Gestionar mi cita</Link></div>
-          </div>
-        </div>
-
+        {/* SECCIÓN 1: SERVICIOS */}
         <section id="servicios" className={`shell ${styles.section}`} aria-labelledby="services-title">
           <div className={styles.sectionHeading}>
-            <h2 id="services-title">¿Cómo podemos ayudarte?</h2>
-            <p>Compara las opciones según lo que necesites. Los precios son referenciales.</p>
+            <h2 id="services-title">Nuestros Servicios Odontológicos</h2>
+            <p>Atención personalizada con equipamiento moderno y procedimientos seguros para toda la familia.</p>
           </div>
-          <div className={styles.services}>
-            {publicServices.map((service) => (
-              <article key={service.id} className={styles.service}>
-                <span className={styles.icon}><PublicIcon name={service.id} /></span>
-                <h3>{service.name}</h3>
-                <p>{service.intent}</p>
-                <div className={styles.serviceMeta}>
-                  <span>{service.duration} min</span>
-                  <strong>{servicePrice(service.priceCents)}</strong>
+
+          <div className={styles.servicesGrid}>
+            {services.map((service) => (
+              <article key={service.id} className={styles.serviceCard}>
+                <div className={styles.serviceIcon}>
+                  <PublicIcon name={service.icon} />
                 </div>
-                <Link href={`/servicios/${service.id}`} className={styles.cardLink}>
-                  Ver {service.name.toLocaleLowerCase("es-PE")} <PublicIcon name="arrow" />
+                <h3>{service.name}</h3>
+                <p>{service.description}</p>
+                <div className={styles.serviceMeta}>
+                  <span className={styles.serviceDuration}>
+                    <PublicIcon name="clock" /> {service.duration} min
+                  </span>
+                  <strong className={styles.servicePrice}>{servicePrice(service.priceCents)}</strong>
+                </div>
+                <Link href={`/reservar?servicio=${service.id}`} className={styles.serviceBtn}>
+                  Reservar este servicio <PublicIcon name="arrow" />
                 </Link>
               </article>
             ))}
           </div>
         </section>
 
-        <section className={`shell ${styles.availability}`} aria-labelledby="availability-title">
-          <div className={styles.availabilityCopy}>
-            <span className={styles.icon}><PublicIcon name="calendar" /></span>
-            <div>
-              <h2 id="availability-title">Próxima evaluación dental</h2>
-              <p>Consulta la agenda de demostración. El horario se selecciona al reservar.</p>
+        {/* SECCIÓN 2: SOBRE EL PROFESIONAL */}
+        <section id="profesional" className={styles.sectionAlt} aria-labelledby="doctor-title">
+          <div className="shell">
+            <div className={styles.sectionHeading}>
+              <h2 id="doctor-title">Sobre el Profesional</h2>
+              <p>Experiencia, dedicación y calidez en cada consulta odontológica.</p>
+            </div>
+
+            <div className={styles.doctorCard}>
+              <div className={styles.doctorAvatar}>
+                <PublicIcon name="professional" />
+              </div>
+              <div className={styles.doctorInfo}>
+                <span className={styles.doctorBadge}>{leadDoctor.title}</span>
+                <h3>{leadDoctor.name}</h3>
+                <div className={styles.doctorDegree}>{leadDoctor.specialty}</div>
+                <p className={styles.doctorBio}>{leadDoctor.bio}</p>
+                <div className={styles.doctorHighlights}>
+                  <div className={styles.highlightItem}>
+                    <PublicIcon name="check" /> Instrumental 100% esterilizado
+                  </div>
+                  <div className={styles.highlightItem}>
+                    <PublicIcon name="check" /> Diagnóstico claro y honesto
+                  </div>
+                  <div className={styles.highlightItem}>
+                    <PublicIcon name="check" /> Tratamientos sin dolor y confort
+                  </div>
+                  <div className={styles.highlightItem}>
+                    <PublicIcon name="check" /> Puntualidad en tus horarios
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <NextAppointment />
         </section>
 
-        <section id="primera-visita" className={styles.visit} aria-labelledby="first-visit-title">
-          <div className={`shell ${styles.visitInner}`}>
-            <div className={styles.visitCopy}>
-              <h2 id="first-visit-title">Tu primera visita</h2>
-              <p>Un espacio para hablar de lo que necesitas y decidir los siguientes pasos con el profesional.</p>
-              <ol className={styles.steps}>
-                <li><strong>Elige un horario</strong><span>Selecciona una evaluación si todavía tienes dudas.</span></li>
-                <li><strong>Comparte tus inquietudes</strong><span>Trae las preguntas que quieras resolver en la consulta.</span></li>
-                <li><strong>Revisa las opciones</strong><span>Pregunta por lo que incluye cada alternativa y su costo.</span></li>
-              </ol>
-            </div>
-            <div id="equipo" className={styles.team}>
-              <h3>Equipo de atención</h3>
-              <p>Perfiles de demostración. Al reservar puedes elegir un profesional o buscar el primer horario disponible.</p>
-              <ul>
-                {professionals.map((professional) => (
-                  <li key={professional.id}>
-                    <span className={styles.icon}><PublicIcon name="professional" /></span>
-                    <div><strong>{professional.name}</strong><span>{professional.title}</span></div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section id="preguntas" className={`shell ${styles.section} ${styles.faq}`} aria-labelledby="faq-title">
+        {/* SECCIÓN 3: UBICACIÓN Y HORARIOS */}
+        <section id="ubicacion" className={`shell ${styles.section}`} aria-labelledby="location-title">
           <div className={styles.sectionHeading}>
-            <h2 id="faq-title">Preguntas frecuentes</h2>
-            <Link className={styles.textLink} href="/mi-cita">Ayuda con una cita existente</Link>
+            <h2 id="location-title">Ubicación y Horario de Atención</h2>
+            <p>Atención presencial en la histórica ciudad de Huamanga.</p>
           </div>
-          <div className={styles.questions}>
+
+          <div className={styles.locationGrid}>
+            <div className={styles.infoCard}>
+              <h3>
+                <PublicIcon name="location" /> Datos de Localización
+              </h3>
+              <dl className={styles.infoList}>
+                <div className={styles.infoItem}>
+                  <dt>Ciudad y Región</dt>
+                  <dd>{clinic.location}</dd>
+                </div>
+                <div className={styles.infoItem}>
+                  <dt>Dirección</dt>
+                  <dd>
+                    {clinic.address ? (
+                      clinic.address
+                    ) : (
+                      <div className={styles.addressPlaceholderNotice}>
+                        <PublicIcon name="location" /> {clinic.addressPlaceholder}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+                <div className={styles.infoItem}>
+                  <dt>Horario de Atención</dt>
+                  <dd>{openingHours}</dd>
+                </div>
+                <div className={styles.infoItem}>
+                  <dt>Días no laborables</dt>
+                  <dd>Domingos y feriados declarados</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className={styles.mapPlaceholderCard}>
+              <PublicIcon name="location" />
+              <strong>{clinic.mapPlaceholder}</strong>
+              <p>
+                Próximamente compartiremos el plano interactivo de Google Maps para tu fácil llegada al consultorio.
+              </p>
+              <div className={styles.addressPlaceholderNotice}>Huamanga, Ayacucho, Perú</div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECCIÓN 4: CONTACTO Y RESERVA */}
+        <section id="contacto" className={styles.contactSection} aria-labelledby="contact-title">
+          <div className={`shell ${styles.contactInner}`}>
+            <div className={styles.contactCopy}>
+              <h2 id="contact-title">¿Tienes preguntas o deseas reservar?</h2>
+              <p>
+                Agenda tu cita en línea en menos de 2 minutos o comunícate directamente con nuestro equipo de atención.
+              </p>
+              <div className={styles.contactChannels}>
+                <a href={`tel:${clinic.phone}`} className={styles.channelItem}>
+                  <PublicIcon name="phone" /> {clinic.phone}
+                </a>
+                <a href={`mailto:${clinic.email}`} className={styles.channelItem}>
+                  <PublicIcon name="mail" /> {clinic.email}
+                </a>
+                <div className={styles.channelItem}>
+                  <PublicIcon name="clock" /> {openingHours}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.contactCard}>
+              <h3>Reserva tu turno ahora</h3>
+              <p>Selecciona fecha y hora disponible sin intermediarios ni demoras.</p>
+              <Link href="/reservar" className={styles.ctaBookingBtn}>
+                Ir al flujo de reserva <PublicIcon name="arrow" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* PREGUNTAS FRECUENTES */}
+        <section className={`shell ${styles.section}`} aria-labelledby="faq-title">
+          <div className={styles.sectionHeading}>
+            <h2 id="faq-title">Preguntas Frecuentes</h2>
+            <p>Respuestas a las dudas más comunes de nuestros pacientes.</p>
+          </div>
+          <div style={{ display: "grid", gap: "1rem", maxWidth: "48rem", marginInline: "auto" }}>
             {questions.map(({ question, answer }) => (
-              <details key={question}>
-                <summary>{question}</summary>
-                <p>{answer}</p>
+              <details key={question} className="panel">
+                <summary style={{ cursor: "pointer", color: "var(--blue-deep)" }}>{question}</summary>
+                <p style={{ marginTop: "0.5rem", color: "var(--muted)", lineHeight: 1.6 }}>{answer}</p>
               </details>
             ))}
           </div>
         </section>
-
-        <section id="ubicacion" className={styles.locationSection} aria-labelledby="location-title">
-          <div className={`shell ${styles.locationInner}`}>
-            <div>
-              <h2 id="location-title">Horario y ubicación</h2>
-              <dl className={styles.hours}>
-                <div><dt>Ciudad</dt><dd>{clinic.location}</dd></div>
-                <div><dt>Horario de demostración</dt><dd>{publicHours}</dd></div>
-              </dl>
-            </div>
-            <Link href="/reservar" className="button">Reservar cita <PublicIcon name="arrow" /></Link>
-          </div>
-        </section>
       </main>
 
+      {/* FOOTER PÚBLICO (Sin login visible) */}
       <footer className={styles.footer}>
         <div className={`shell ${styles.footerInner}`}>
-          <ClinicBrand />
-          <nav aria-label="Enlaces de ayuda">
-            <a href="#preguntas">Preguntas frecuentes</a>
-            <Link href="/privacidad">Privacidad</Link>
-            <Link href="/ingresar">Acceso del equipo</Link>
+          <div>
+            <ClinicBrand />
+            <p className={styles.copyright}>
+              © {new Date().getFullYear()} {clinic.name}. {clinic.location}.
+            </p>
+          </div>
+          <nav className={styles.footerNav} aria-label="Enlaces secundarios">
+            <a href="#servicios">Servicios</a>
+            <a href="#profesional">El Profesional</a>
+            <a href="#ubicacion">Ubicación</a>
+            <Link href="/privacidad">Política de Privacidad</Link>
           </nav>
         </div>
       </footer>

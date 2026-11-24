@@ -1,0 +1,200 @@
+/* Calendario interactivo en paleta médica azul */
+
+.calendarContainer {
+  background: #ffffff;
+  border: 1px solid var(--blue-soft-border);
+  border-radius: 1rem;
+  padding: clamp(0.75rem, 2.5vw, 1.25rem);
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  box-shadow: 0 2px 8px rgba(10, 37, 64, 0.05);
+  overflow: hidden;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.monthTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--blue-deep);
+  text-align: center;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.loadingTag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--blue-primary);
+}
+
+.navButton {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue-soft);
+  border: 1px solid var(--blue-soft-border);
+  border-radius: 0.5rem;
+  color: var(--blue-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.navButton:hover {
+  background: var(--blue-tint);
+  border-color: var(--blue-primary);
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.15rem, 1vw, 0.35rem);
+  margin-bottom: 0.5rem;
+}
+
+.weekDayHeader {
+  text-align: center;
+  font-size: clamp(0.68rem, 2vw, 0.8rem);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding-block: 0.3rem;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.15rem, 1vw, 0.35rem);
+}
+
+.emptyCell {
+  min-height: 44px;
+}
+
+.dayButton {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: clamp(0.85rem, 2.6vw, 0.95rem);
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  padding: 0.15rem;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.dayButton:hover:not(:disabled) {
+  background: var(--blue-soft);
+  border-color: var(--blue-primary);
+  color: var(--blue-deep);
+}
+
+.todayDay {
+  border-color: var(--blue-soft-border);
+  font-weight: 750;
+}
+
+.selectedDay {
+  background: var(--blue-primary) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(0, 102, 178, 0.3);
+}
+
+.dayButton:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.selectedDot {
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.calendarLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legendDotAvailable {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--blue-primary);
+  background: #ffffff;
+}
+
+.legendDotDisabled {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.legendDotSelected {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue-primary);
+}
+
+.nativeFallback {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fallbackLabel {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.nativeInput {
+  font-size: 0.95rem;
+  border: 1px solid var(--control-line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}

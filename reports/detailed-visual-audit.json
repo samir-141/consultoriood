@@ -1,0 +1,606 @@
+{
+  "viewports": [
+    {
+      "viewport": "360-mobile",
+      "width": 360,
+      "height": 800,
+      "totalLoadMs": 915,
+      "status": 200,
+      "performanceTiming": {
+        "ttfb": 136,
+        "domContentLoaded": 316,
+        "loadEvent": 410
+      },
+      "heroHeight": 800,
+      "heroCoversViewport": true,
+      "overflow": {
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "bodyScrollWidth": 360,
+        "bodyClientWidth": 360,
+        "hasOverflow": false
+      }
+    },
+    {
+      "viewport": "768-tablet",
+      "width": 768,
+      "height": 1024,
+      "totalLoadMs": 788,
+      "status": 200,
+      "performanceTiming": {
+        "ttfb": 180,
+        "domContentLoaded": 233,
+        "loadEvent": 290
+      },
+      "heroHeight": 1024,
+      "heroCoversViewport": true,
+      "overflow": {
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "bodyScrollWidth": 768,
+        "bodyClientWidth": 768,
+        "hasOverflow": false
+      }
+    },
+    {
+      "viewport": "1024-desktop-small",
+      "width": 1024,
+      "height": 768,
+      "totalLoadMs": 679,
+      "status": 200,
+      "performanceTiming": {
+        "ttfb": 112,
+        "domContentLoaded": 151,
+        "loadEvent": 174
+      },
+      "heroHeight": 768,
+      "heroCoversViewport": true,
+      "overflow": {
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "bodyScrollWidth": 1024,
+        "bodyClientWidth": 1024,
+        "hasOverflow": false
+      }
+    },
+    {
+      "viewport": "1440-desktop-std",
+      "width": 1440,
+      "height": 900,
+      "totalLoadMs": 730,
+      "status": 200,
+      "performanceTiming": {
+        "ttfb": 111,
+        "domContentLoaded": 169,
+        "loadEvent": 224
+      },
+      "heroHeight": 900,
+      "heroCoversViewport": true,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "bodyClientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "viewport": "1920-desktop-wide",
+      "width": 1920,
+      "height": 1080,
+      "totalLoadMs": 688,
+      "status": 200,
+      "performanceTiming": {
+        "ttfb": 105,
+        "domContentLoaded": 152,
+        "loadEvent": 205
+      },
+      "heroHeight": 1080,
+      "heroCoversViewport": true,
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920,
+        "bodyClientWidth": 1920,
+        "hasOverflow": false
+      }
+    }
+  ],
+  "overflowCheckAllWidths": [
+    {
+      "width": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "hasOverflow": false
+    },
+    {
+      "width": 340,
+      "scrollWidth": 340,
+      "clientWidth": 340,
+      "hasOverflow": false
+    },
+    {
+      "width": 360,
+      "scrollWidth": 360,
+      "clientWidth": 360,
+      "hasOverflow": false
+    },
+    {
+      "width": 375,
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "hasOverflow": false
+    },
+    {
+      "width": 414,
+      "scrollWidth": 414,
+      "clientWidth": 414,
+      "hasOverflow": false
+    },
+    {
+      "width": 480,
+      "scrollWidth": 480,
+      "clientWidth": 480,
+      "hasOverflow": false
+    },
+    {
+      "width": 600,
+      "scrollWidth": 600,
+      "clientWidth": 600,
+      "hasOverflow": false
+    },
+    {
+      "width": 768,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "hasOverflow": false
+    },
+    {
+      "width": 800,
+      "scrollWidth": 800,
+      "clientWidth": 800,
+      "hasOverflow": false
+    },
+    {
+      "width": 900,
+      "scrollWidth": 900,
+      "clientWidth": 900,
+      "hasOverflow": false
+    },
+    {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "hasOverflow": false
+    },
+    {
+      "width": 1200,
+      "scrollWidth": 1200,
+      "clientWidth": 1200,
+      "hasOverflow": false
+    },
+    {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "hasOverflow": false
+    },
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasOverflow": false
+    },
+    {
+      "width": 1600,
+      "scrollWidth": 1600,
+      "clientWidth": 1600,
+      "hasOverflow": false
+    },
+    {
+      "width": 1920,
+      "scrollWidth": 1920,
+      "clientWidth": 1920,
+      "hasOverflow": false
+    }
+  ],
+  "heroCheck": {
+    "docName": "Edu Gómez Delgado",
+    "docTitle": "Lic. en Odontología",
+    "clinicBadge": "Huamanga, Ayacucho, Perú",
+    "headline": "Cuidamos tu sonrisa con excelencia y calidez.",
+    "lead": "Atención odontológica integral, cercana y con tecnología moderna en el corazón de Huamanga.",
+    "heroImgBadge": "GOMEZ DELGADO DENTALHuamanga, Ayacucho",
+    "heroBtns": [
+      {
+        "text": "Reservar cita",
+        "href": "/reservar",
+        "classes": "button",
+        "rect": {
+          "x": 0,
+          "y": 642.75,
+          "width": 184.703125,
+          "height": 50,
+          "top": 642.75,
+          "right": 184.703125,
+          "bottom": 692.75,
+          "left": 0
+        }
+      },
+      {
+        "text": "Ver tratamientos",
+        "href": "#servicios",
+        "classes": "button-secondary",
+        "rect": {
+          "x": 200.703125,
+          "y": 643.75,
+          "width": 188.984375,
+          "height": 48,
+          "top": 643.75,
+          "right": 389.6875,
+          "bottom": 691.75,
+          "left": 200.703125
+        }
+      }
+    ],
+    "computedHeroHeight": "900px"
+  },
+  "paletteTokens": {
+    "blueDeep": "#0a2540",
+    "blueDark": "#0f3d6b",
+    "bluePrimary": "#0066b2",
+    "blueHover": "#004c85",
+    "blueSoft": "#f0f7ff",
+    "blueSoftBorder": "#bfdbfe",
+    "canvas": "#f8fafc",
+    "ink": "#0f172a",
+    "muted": "#475569",
+    "paper": "#fff"
+  },
+  "contrastMetrics": {
+    "blueDeepOnWhite": {
+      "colors": "#0a2540 on #ffffff",
+      "ratio": 15.54,
+      "passesAA": true,
+      "passesAAA": true
+    },
+    "bluePrimaryOnWhite": {
+      "colors": "#0066b2 on #ffffff",
+      "ratio": 5.93,
+      "passesAA": true,
+      "passesAAA": false
+    },
+    "whiteOnBluePrimary": {
+      "colors": "#ffffff on #0066b2 (Botón primario)",
+      "ratio": 5.93,
+      "passesAA": true,
+      "passesAAA": false
+    },
+    "inkOnCanvas": {
+      "colors": "#0f172a on #f8fafc",
+      "ratio": 17.06,
+      "passesAA": true,
+      "passesAAA": true
+    },
+    "mutedOnWhite": {
+      "colors": "#475569 on #ffffff",
+      "ratio": 7.58,
+      "passesAA": true,
+      "passesAAA": true
+    },
+    "bluePrimaryOnBlueSoft": {
+      "colors": "#0066b2 on #f0f7ff (Service button)",
+      "ratio": 5.49,
+      "passesAA": true,
+      "passesAAA": false
+    }
+  },
+  "touchTargets": [
+    {
+      "tag": "a",
+      "text": "Saltar al contenido",
+      "href": "#contenido",
+      "width": 184,
+      "height": 49,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "GOMEZ DELGADO DENTALClínica Odontol",
+      "href": "/",
+      "width": 185,
+      "height": 77,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Reservar cita",
+      "href": "/reservar",
+      "width": 127,
+      "height": 63,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Reservar cita",
+      "href": "/reservar",
+      "width": 185,
+      "height": 50,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Ver tratamientos",
+      "href": "#servicios",
+      "width": 189,
+      "height": 48,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Reservar este servicio",
+      "href": "/reservar?servicio=evaluacion",
+      "width": 286,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Reservar este servicio",
+      "href": "/reservar?servicio=limpieza",
+      "width": 286,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Reservar este servicio",
+      "href": "/reservar?servicio=control",
+      "width": 286,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "+51 966 000 000",
+      "href": "tel:+51 966 000 000",
+      "width": 328,
+      "height": 26,
+      "visible": true,
+      "meets44px": false
+    },
+    {
+      "tag": "a",
+      "text": "contacto@gomezdelgadodental.pe",
+      "href": "mailto:contacto@gomezdelgadodental.pe",
+      "width": 328,
+      "height": 26,
+      "visible": true,
+      "meets44px": false
+    },
+    {
+      "tag": "a",
+      "text": "Ir al flujo de reserva",
+      "href": "/reservar",
+      "width": 262,
+      "height": 48,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "GOMEZ DELGADO DENTALClínica Odontol",
+      "href": "/",
+      "width": 279,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Servicios",
+      "href": "#servicios",
+      "width": 66,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "El Profesional",
+      "href": "#profesional",
+      "width": 97,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Ubicación",
+      "href": "#ubicacion",
+      "width": 71,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    },
+    {
+      "tag": "a",
+      "text": "Política de Privacidad",
+      "href": "/privacidad",
+      "width": 153,
+      "height": 44,
+      "visible": true,
+      "meets44px": true
+    }
+  ],
+  "assets": [
+    {
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/image?url=%2Ffotografia%2Fconsulta-ilustrativa.webp&w=384&q=75",
+      "status": 200,
+      "contentType": "image/webp",
+      "size": "8676"
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "status": 200,
+      "contentType": "font/woff2",
+      "size": "48432"
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app_landing_module_1jf2nntdmte9b.css",
+      "status": 200,
+      "contentType": "text/css; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Broot-of-the-server%5D__0z3bl0_09y5jx._.css",
+      "status": 200,
+      "contentType": "text/css; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0fb9-gqu7_t97._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": "600"
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/1q96_modules_next_dist_compiled_react-dom_cjs_react-dom_development_1sqry0_53krp4.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_0grqycjrj6mju._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_1amofcmz--cdp._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_164kp-67asdr9._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_%40swc_helpers_cjs_1r9vbqwj2323d._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/_1anvha4rlo79g._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/_219uq1sj0q91c._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": "494"
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/turbopack-_11q0wbt2n0d9y._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_20wefz_f1k6jn._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_0o94i4u1qxp9_._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/1daa_next_dist_compiled_react-dom_cjs_react-dom-client_development_0mp0cp_t-ezj9.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_090k2jmam7qwg.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_1165-soo5tfpf._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/identidad/marca.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "size": "1019"
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsayzyj2p6._.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "size": null
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/image?url=%2Ffotografia%2Fconsulta-ilustrativa.webp&w=640&q=75",
+      "status": 200,
+      "contentType": "image/webp",
+      "size": "18986"
+    }
+  ],
+  "layoutColumns": {
+    "mobile-360": {
+      "servicesGridColumns": 1,
+      "doctorHighlightsColumns": 1,
+      "locationGridColumns": 1
+    },
+    "tablet-768": {
+      "servicesGridColumns": 2,
+      "doctorHighlightsColumns": 2,
+      "locationGridColumns": 2
+    },
+    "desktop-1024": {
+      "servicesGridColumns": 3,
+      "doctorHighlightsColumns": 2,
+      "locationGridColumns": 2
+    },
+    "desktop-1440": {
+      "servicesGridColumns": 3,
+      "doctorHighlightsColumns": 2,
+      "locationGridColumns": 2
+    }
+  }
+}
