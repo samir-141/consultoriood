@@ -47,3 +47,4 @@ npm.cmd run verify
 Esta versión usa el catálogo, el equipo y los horarios de demostración, con sesiones locales y política de cancelación de prueba. Para operar con datos reales quedan pendientes la configuración de Supabase, las credenciales de producción, la entrega efectiva por Meta WhatsApp y la validación de las políticas de acceso, retención, depósitos y cancelaciones. [Alcance y pendientes](docs/progress.md)
 
 La demostración mantiene `noindex` y bloquea el rastreo. `DENTAL_PUBLIC_URL` admite un origen HTTPS para preparar las URL canónicas, Open Graph y el sitemap, sin habilitar la indexación.
+"# consultoriood" 
