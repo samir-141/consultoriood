@@ -18,17 +18,6 @@
   gap: .85rem 1.4rem;
 }
 .header, .footerInner { justify-content: space-between; padding-block: .8rem; }
-.brand { display: inline-flex; align-items: center; gap: .65rem; font-weight: 700; }
-.mark {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--mint);
-  color: var(--green);
-  font-size: 1.25rem;
-}
 .navigation, .staff { font-size: .93rem; font-weight: 600; }
 .navigation a, .staff { padding-block: .6rem; }
 .navigation a:hover, .staff:hover, .textLink:hover, .footer a:hover { text-decoration: underline; }
@@ -51,13 +40,28 @@
 .actions { margin-top: 1.5rem; }
 .textLink { color: var(--green); font-weight: 650; }
 .demo { margin-top: 1rem; font-size: .875rem; color: var(--muted); }
-.heroArt { min-width: 0; overflow: hidden; border-radius: 1.35rem; background: var(--mint); }
-.heroArt img, .sectionArt { display: block; width: 100%; height: auto; }
+.heroArt {
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 5 / 4;
+  margin: 0;
+  place-content: center;
+  justify-items: center;
+  gap: .25rem;
+  border: 1px solid var(--line);
+  border-radius: 1.6rem;
+  background:
+    radial-gradient(ellipse at 50% 48%, var(--paper) 0 38%, transparent 39%),
+    linear-gradient(145deg, #f9f0fc, #ebdff4 68%, #dcf2f2);
+}
+.heroArt img { display: block; width: min(96%, 23rem); height: auto; }
+.heroArt figcaption { margin-top: -.55rem; font-size: .95rem; font-weight: 700; color: var(--brand-ink); }
+.sectionArt { display: block; width: 100%; height: auto; }
 .catalog, .visit { background: var(--mint); border-block: 1px solid var(--line); }
 .catalog, .split { padding-block: clamp(2rem, 6vw, 4rem); }
 .sectionHeading { margin-bottom: 1.4rem; }
 .sectionHeading p { margin-top: .6rem; color: var(--muted); }
-.services { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; margin-bottom: 1.2rem; }
+.services { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
 .service {
   display: flex;
   min-width: 0;
@@ -86,12 +90,12 @@
 .hours div + div { margin-top: .8rem; }
 .hours dd { font-weight: 650; }
 .footerInner { min-height: 4.3rem; color: var(--muted); font-size: .9rem; }
-.footerInner a { font-weight: 650; }
 
 @media (max-width: 43rem) {
   .hero, .split { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
   .hero h1 { max-width: 14ch; }
-  .heroArt { width: min(100%, 29rem); justify-self: center; }
+  .heroArt { width: min(100%, 29rem); min-height: 15rem; justify-self: center; }
+  .heroArt img { width: min(84%, 18rem); }
   .services { grid-template-columns: minmax(0, 1fr); }
   .visit .sectionArt { display: none; }
   .navigation { order: 1; width: 100%; }

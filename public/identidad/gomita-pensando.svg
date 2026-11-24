@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="280" viewBox="0 0 320 280" role="img" aria-labelledby="pensando-title">
+  <title id="pensando-title">Gomita pensando</title>
+  <desc>Un diente de mejillas coral entorna una ceja y lleva una mano a la barbilla.</desc>
+  <defs>
+    <linearGradient id="pensando-esmalte" x1="84" y1="50" x2="208" y2="234" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAFFFF"/>
+      <stop offset=".58" stop-color="#EAF7F7"/>
+      <stop offset="1" stop-color="#D5ECEF"/>
+    </linearGradient>
+    <clipPath id="pensando-silueta">
+      <path d="M 136 84 C 114 84 96 104 94 136 C 90 178 106 226 124 274 C 128 284 138 288 144 278 C 154 262 160 244 170 244 C 180 244 186 262 196 278 C 202 288 212 284 216 274 C 234 226 250 178 246 136 C 244 104 226 84 204 84 C 188 84 178 96 170 96 C 162 96 152 84 136 84 Z" transform="translate(-27 -47) scale(1.07)"/>
+    </clipPath>
+  </defs>
+  <ellipse cx="156" cy="258" rx="80" ry="9" fill="#6C1D6E" opacity=".13"/>
+  <g fill="#EAF7F7" stroke="#6C1D6E" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M227 148c15 10 22 22 18 33-2 7-6 12-11 15 5 2 6 7 3 10-3 4-8 5-11 3-4-2-6-6-6-11 0-5 2-10 6-14 5-8 3-16-5-22Z"/>
+  </g>
+  <path d="M 136 84 C 114 84 96 104 94 136 C 90 178 106 226 124 274 C 128 284 138 288 144 278 C 154 262 160 244 170 244 C 180 244 186 262 196 278 C 202 288 212 284 216 274 C 234 226 250 178 246 136 C 244 104 226 84 204 84 C 188 84 178 96 170 96 C 162 96 152 84 136 84 Z" transform="translate(-27 -47) scale(1.07)" fill="url(#pensando-esmalte)"/>
+  <g clip-path="url(#pensando-silueta)">
+    <path d="M210 41c17 7 26 24 28 43 4 29-13 70-18 96-4 21-9 42-18 51-5 5-10 4-14-1l-15-24c-5-9-11-14-18-12-13 2-21 26-33 39-6 6-11 7-17 0-9-10-15-25-21-42l-15-57-17 6 15 84 22 34 42 7 22-53 28 30 28 18 27-17 23-91 12-78-12-24Z" fill="#BCDCE4"/>
+    <path d="M94 68c13-12 29-14 44-8-23-1-41 12-48 30-7 16-6 33-4 46-8-10-11-25-10-40 1-11 8-22 18-28Z" fill="#fff" opacity=".8"/>
+    <path d="M126 49c17 2 24 12 41 13 9 1 17-1 22-5-16 3-23-3-34-7-11-4-21-4-29-1Z" fill="#38164F"/>
+  </g>
+  <path d="M 136 84 C 114 84 96 104 94 136 C 90 178 106 226 124 274 C 128 284 138 288 144 278 C 154 262 160 244 170 244 C 180 244 186 262 196 278 C 202 288 212 284 216 274 C 234 226 250 178 246 136 C 244 104 226 84 204 84 C 188 84 178 96 170 96 C 162 96 152 84 136 84 Z" transform="translate(-27 -47) scale(1.07)" fill="none" stroke="#6C1D6E" stroke-width="5.5" stroke-linejoin="round"/>
+  <g>
+    <path d="M113 184c18 9 54 12 75-2 0 15-12 26-35 27-20 1-36-8-40-25Z" fill="#9A348E"/>
+    <path d="M118 188c21 9 42 10 65-2" fill="none" stroke="#E8D5EB" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="152" cy="201" r="6.5" fill="#F2C878" stroke="#6C1D6E" stroke-width="1.8"/>
+    <path d="M152 197c0 2 1.5 4 4 4-2.5 0-4 1.5-4 4 0-2.5-1.5-4-4-4 2.5 0 4-2 4-4Z" fill="#fff"/>
+  </g>
+  <g>
+    <path d="M102 103c6-8 14-11 22-8m54 1c7 3 15 2 22-4" fill="none" stroke="#6C1D6E" stroke-width="4.7" stroke-linecap="round"/>
+    <ellipse cx="116" cy="120" rx="11.2" ry="13.4" fill="#FAFFFF" stroke="#6C1D6E" stroke-width="2.2"/>
+    <ellipse cx="118" cy="120.7" rx="8.3" ry="10.5" fill="#1E1B4B"/>
+    <ellipse cx="188" cy="117" rx="11.4" ry="13.8" fill="#FAFFFF" stroke="#6C1D6E" stroke-width="2.2"/>
+    <ellipse cx="190" cy="117.5" rx="8.4" ry="10.7" fill="#1E1B4B"/>
+    <circle cx="119" cy="116.4" r="2.9" fill="#fff"/>
+    <circle cx="191.2" cy="113" r="3.1" fill="#fff"/>
+    <circle cx="115.9" cy="125" r="1.45" fill="#fff"/>
+    <circle cx="188.1" cy="122.1" r="1.45" fill="#fff"/>
+    <ellipse cx="101" cy="138" rx="10.4" ry="5.5" fill="#F19A9E" transform="rotate(-8 101 138)"/>
+    <ellipse cx="202" cy="135" rx="10.7" ry="5.5" fill="#F19A9E" transform="rotate(5 202 135)"/>
+    <path d="M145 149c9-6 22-7 32 0" fill="none" stroke="#6C1D6E" stroke-width="4.3" stroke-linecap="round"/>
+  </g>
+    <path d="M81 152c-11 8-14 20-9 30 7 12 25 12 39 6l25-12c7 2 15 2 21-1l7-5c2-2 2-6 0-8l-5-2 9-6c5-3 5-8 0-9-3-1-6 1-9 2l-16 7-5-7c-3-4-8-4-11-1-2 3-2 6 0 10l3 6-18 8c-10 4-17 5-22 1l1-9" fill="#EAF7F7" stroke="#6C1D6E" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M80 175c6 8 19 8 31 3l14-6" fill="none" stroke="#BDDCE5" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

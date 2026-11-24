@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { ClinicBrand } from "@/app/components/clinic-brand";
 import styles from "./login.module.css";
 
 const demoAccounts = [
@@ -39,9 +39,8 @@ export default function SignInPage() {
   return (
     <main className={styles.login}>
       <div className={styles.frame}>
-        <Link className={styles.back} href="/">Volver al inicio</Link>
         <section className={styles.paper} aria-labelledby="sign-in-title">
-          <span className={styles.mark} aria-hidden="true">+</span>
+          <ClinicBrand />
           <h1 id="sign-in-title">Acceso del equipo</h1>
           <p>Ingresa para trabajar con la agenda y las herramientas del consultorio.</p>
           <form className={styles.form} onSubmit={signIn}>

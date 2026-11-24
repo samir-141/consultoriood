@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { clinic } from "@/lib/catalog";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Consultorio dental", template: "%s · Consultorio dental" },
+  title: { default: `${clinic.name} · ${clinic.descriptor}`, template: `%s · ${clinic.name}` },
   description: "Reserva una cita dental y gestiona tu atención en Lima, Perú.",
+  icons: { icon: { url: "/identidad/marca.svg", type: "image/svg+xml", sizes: "any" } },
   robots: {
     index: false,
     follow: false,
@@ -14,7 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f5ee",
+  themeColor: "#f9f5fa",
 };
 
 type RootLayoutProps = Readonly<{

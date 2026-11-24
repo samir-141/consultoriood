@@ -7,13 +7,22 @@
 }
 
 :root {
-  --ink: #19382e;
-  --paper: #fffcf6;
-  --canvas: #f6f5ee;
-  --green: #215c4e;
-  --mint: #e5efe5;
-  --muted: #4a6155;
-  --line: #d5dfd4;
+  --brand-ink: #211d24;
+  --brand-primary: #6c1d6e;
+  --brand-hover: #531655;
+  --brand-soft: #e8d5eb;
+  --ink: var(--brand-ink);
+  --paper: #fffcff;
+  --canvas: #f9f5fa;
+  --green: var(--brand-primary);
+  --mint: var(--brand-soft);
+  --muted: #675372;
+  --line: #e5d8eb;
+  --control-line: #987e9f;
+  --action: var(--brand-primary);
+  --soft: var(--brand-soft);
+  --subtle: var(--muted);
+  --ring: #9a348e;
   --danger: #842d35;
   color-scheme: light;
 }
@@ -35,7 +44,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
 h2 { font-size: clamp(1.35rem, 3.6vw, 1.9rem); }
 h3 { font-size: 1.12rem; }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
-textarea:focus-visible, summary:focus-visible { outline: 2px solid #2d7464; outline-offset: 3px; }
+textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 p, dd, li { overflow-wrap: anywhere; }
 label { font-weight: 600; }
 button, summary { cursor: pointer; }
@@ -43,17 +52,29 @@ button:disabled { cursor: default; opacity: .65; }
 input:not([type="checkbox"],[type="radio"]), select, textarea {
   max-width: 100%;
   min-height: 2.75rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: .6rem;
   padding: .5rem .7rem;
   color: var(--ink);
   background: var(--paper);
 }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--green); }
+input:is([type="checkbox"], [type="radio"]), progress { accent-color: var(--brand-primary); }
 textarea { resize: vertical; }
 summary { width: fit-content; min-height: 2.5rem; padding-block: .4rem; font-weight: 600; }
 
 .shell { width: min(100% - 2rem, 70rem); margin-inline: auto; }
+.clinic-brand {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: .55rem;
+  min-height: 2.75rem;
+  color: var(--brand-ink);
+}
+.clinic-brand img { flex: 0 0 2.75rem; }
+.clinic-brand-copy { display: grid; gap: .08rem; line-height: 1.12; }
+.clinic-brand-copy strong { font-size: 1.05rem; font-weight: 750; letter-spacing: -.025em; }
+.clinic-brand-copy > span { font-size: .75rem; color: var(--muted); }
 .panel {
   min-width: 0;
   border: 1px solid var(--line);
@@ -80,7 +101,7 @@ summary { width: fit-content; min-height: 2.5rem; padding-block: .4rem; font-wei
   transition: background-color 150ms ease;
 }
 .button { background: var(--green); color: #fff; }
-.button:hover:not(:disabled) { background: #18493c; }
+.button:hover:not(:disabled) { background: var(--brand-hover); }
 .button-secondary { border-color: var(--line); background: var(--paper); color: var(--ink); }
 .button-secondary:hover:not(:disabled) { background: var(--mint); }
 .muted { color: var(--muted); }

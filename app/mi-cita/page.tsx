@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ClinicBrand } from "@/app/components/clinic-brand";
 import styles from "@/app/reservar/booking.module.css";
+import { Gomita } from "@/app/reservar/gomita";
 
 export const metadata: Metadata = { title: "Mi cita" };
 
 export default function MyAppointmentPage() {
   return (
     <main className={styles.page}>
-      <Link className={styles.exitLink} href="/">Volver al inicio</Link>
-      <header className={styles.intro}>
+      <ClinicBrand />
+      <header className={`${styles.intro} ${styles.appointmentIntro}`}>
         <h1>Mi cita</h1>
+        <Gomita pose="saludo" compact />
       </header>
       <section className={`${styles.card} ${styles.single}`} aria-labelledby="find-appointment">
         <div className={styles.stage}>

@@ -1,17 +1,15 @@
 .workspace {
-  --staff-ink: var(--ink, #18352e);
-  --staff-paper: var(--paper, #fffcf6);
-  --staff-green: var(--green, #245c4f);
-  --staff-mint: var(--mint, #e6f1e8);
-  --staff-line: var(--line, #d7e2d9);
-  --staff-muted: #496056;
+  --staff-ink: var(--ink);
+  --staff-paper: var(--paper);
+  --staff-green: var(--brand-primary);
+  --staff-mint: var(--brand-soft);
+  --staff-line: var(--line);
+  --staff-muted: var(--muted);
   color: var(--staff-ink);
 }
 .bar { border-bottom: 1px solid var(--staff-line); background: var(--staff-paper); }
 .wrap { width: min(100% - 2rem, 73rem); margin-inline: auto; }
 .barRow { display: flex; flex-wrap: wrap; gap: .65rem 1.4rem; align-items: center; padding: 1rem 0; }
-.brand { display: inline-flex; align-items: center; gap: .5rem; color: var(--staff-ink); text-decoration: none; font-weight: 750; }
-.mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--staff-green); background: var(--staff-mint); }
 .account { display: flex; align-items: center; gap: .65rem; margin-left: auto; }
 .account span { color: var(--staff-muted); font-size: .875rem; }
 .nav { display: flex; gap: .35rem .65rem; flex-wrap: wrap; padding-bottom: .8rem; }
@@ -38,8 +36,8 @@
 .shortcutLink { color: var(--staff-green); text-decoration: underline; font-weight: 700; }
 .field { display: grid; gap: .3rem; font-weight: 650; min-width: 0; }
 .field input, .field select, .field textarea {
-  width: 100%; min-height: 2.65rem; padding: .45rem .6rem; background: #fffdf8;
-  border: 1px solid #aabdb2; border-radius: .5rem; color: var(--staff-ink);
+  width: 100%; min-height: 2.65rem; padding: .45rem .6rem; background: var(--paper);
+  border: 1px solid var(--control-line); border-radius: .5rem; color: var(--staff-ink);
   font: inherit; font-weight: 450; box-sizing: border-box;
 }
 .field textarea { min-height: 4.3rem; resize: vertical; }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ClinicBrand } from "@/app/components/clinic-brand";
 import { clinic, professionals, services } from "@/lib/catalog";
 import styles from "./landing.module.css";
 
@@ -16,10 +17,7 @@ export default function HomePage() {
       <a href="#contenido" className={styles.skip}>Saltar al contenido</a>
       <header className={styles.top}>
         <div className={`shell ${styles.header}`}>
-          <Link href="/" className={styles.brand}>
-            <span className={styles.mark} aria-hidden="true">+</span>
-            Consultorio dental
-          </Link>
+          <ClinicBrand />
           <nav className={styles.navigation} aria-label="Información del consultorio">
             <a href="#servicios">Servicios</a>
             <a href="#equipo">Equipo</a>
@@ -41,9 +39,10 @@ export default function HomePage() {
             </div>
             <p className={styles.demo}>Versión de demostración con datos de ejemplo.</p>
           </div>
-          <div className={styles.heroArt}>
-            <Image src="/ilustraciones/landing-hero.svg" width={640} height={480} alt="" preload />
-          </div>
+          <figure className={styles.heroArt}>
+            <Image src="/identidad/gomita-saludo.svg" width={320} height={280} alt="" loading="eager" fetchPriority="high" unoptimized />
+            <figcaption>Gomita</figcaption>
+          </figure>
         </section>
 
         <section id="servicios" className={styles.catalog}>
@@ -64,7 +63,6 @@ export default function HomePage() {
                 </article>
               ))}
             </div>
-            <Link href="/reservar" className="button-secondary">Elegir servicio y horario</Link>
           </div>
         </section>
 
@@ -105,8 +103,7 @@ export default function HomePage() {
 
       <footer className={styles.footer}>
         <div className={`shell ${styles.footerInner}`}>
-          <span>Consultorio dental · Lima, Perú</span>
-          <Link href="/ingresar">Acceso del equipo</Link>
+          <span>{clinic.name} · {clinic.location}</span>
         </div>
       </footer>
     </>

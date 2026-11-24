@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { ClinicBrand } from "@/app/components/clinic-brand";
 import { errorMessage, roleLabels, StaffContext, staffFetch, type Role, type Staff } from "./agenda/staff";
 import styles from "./agenda/staff.module.css";
 
@@ -90,9 +91,7 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
         <header className={styles.bar}>
           <div className={styles.wrap}>
             <div className={styles.barRow}>
-              <Link href="/panel" className={styles.brand}>
-                <span className={styles.mark} aria-hidden="true">+</span> Consultorio dental
-              </Link>
+              <ClinicBrand href="/panel" />
               <div className={styles.account}>
                 <span>{roleLabels[staff.role]}</span>
                 <button className={styles.secondary} type="button" disabled={signingOut} onClick={signOut}>

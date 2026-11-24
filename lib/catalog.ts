@@ -1,5 +1,6 @@
 export const clinic = {
-  name: "Consultorio dental",
+  name: "Gómez Delgado",
+  descriptor: "Clínica dental",
   location: "Lima, Perú",
   timeZone: "America/Lima",
   hours: "Lunes a sábado, 9:00 a. m. a 5:00 p. m.",

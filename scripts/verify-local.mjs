@@ -91,13 +91,19 @@ const baseBooking = { date: day, time: "10:00", serviceId: "limpieza", professio
 
 try {
   await boot();
-  await request("/");
+  const { data: landing } = await request("/");
+  assert.match(landing, /Gómez Delgado/);
+  assert.match(landing, /\/identidad\/gomita-saludo\.svg/);
   await request("/reservar");
   await request("/ingresar");
-  await request("/ilustraciones/landing-hero.svg");
+  for (const name of ["marca", "gomita-saludo", "gomita-pensando", "gomita-exito"]) {
+    const { response } = await request(`/identidad/${name}.svg`);
+    assert.match(response.headers.get("content-type"), /^image\/svg\+xml\b/);
+  }
   const { data: catalog } = await request("/api/catalogo");
+  assert.equal(catalog.clinic.name, "Gómez Delgado");
   assert.equal(catalog.services.length, 3);
-  console.log("✓ Landing, SVG y catálogo");
+  console.log("✓ Portada, identidad SVG y catálogo");
 
   await request("/api/panel/agenda", { status: 401 });
   await request("/api/sesion", {

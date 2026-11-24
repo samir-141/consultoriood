@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ClinicBrand } from "@/app/components/clinic-brand";
 import {
   BookingError,
   bookingMessage,
@@ -21,6 +21,7 @@ import {
   type Slot,
 } from "./reserva";
 import styles from "./booking.module.css";
+import { Gomita } from "./gomita";
 
 type Step = "service" | "schedule" | "contact" | "review" | "confirmed";
 type Contact = { name: string; phone: string; email: string; whatsappOptIn: boolean };
@@ -63,6 +64,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
   const service = catalog.services.find((item) => item.id === serviceId);
   const professionals = catalog.professionals.filter((item) => item.serviceIds.includes(serviceId));
   const availability = useSlots(date, serviceId, professionalId, step === "schedule");
@@ -70,7 +72,9 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
   const expired = remaining === 0;
 
   useEffect(() => {
-    if (step !== "service") heading.current?.focus();
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    heading.current?.focus();
   }, [step]);
 
   function go(next: Step) {
@@ -169,7 +173,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
 
   return (
     <main className={styles.page}>
-      <Link className={styles.exitLink} href="/">Volver al inicio</Link>
+      <ClinicBrand />
       <header className={styles.intro}>
         <h1>Reserva tu cita</h1>
         <p>Elige un servicio y un horario que te acomode.</p>
@@ -311,9 +315,11 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                 <p>{readableDate(selectedSlot.date)} a las {selectedSlot.time} · {service.name}</p>
                 <p className={styles.notice}>Estás en una demostración. Usa datos ficticios.</p>
                 <form className={styles.form} onSubmit={reserve} autoComplete="off">
-                  <label className={styles.field}>
+                  <label className={styles.field} htmlFor="booking-name">
                     Nombre completo
                     <input
+                      id="booking-name"
+                      name="name"
                       required
                       minLength={2}
                       maxLength={100}
@@ -322,9 +328,11 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                     />
                   </label>
                   <div className={styles.row}>
-                    <label className={styles.field}>
+                    <label className={styles.field} htmlFor="booking-phone">
                       Teléfono
                       <input
+                        id="booking-phone"
+                        name="phone"
                         required
                         type="tel"
                         minLength={7}
@@ -334,18 +342,23 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                         placeholder="+51 900 000 000"
                       />
                     </label>
-                    <label className={styles.field}>
+                    <label className={styles.field} htmlFor="booking-email">
                       Correo opcional
                       <input
+                        id="booking-email"
+                        name="email"
                         type="email"
-                        maxLength={180}
+                        maxLength={160}
+                        spellCheck={false}
                         value={contact.email}
                         onChange={(event) => setContact({ ...contact, email: event.target.value })}
                       />
                     </label>
                   </div>
-                  <label className={styles.checkbox}>
+                  <label className={styles.checkbox} htmlFor="booking-whatsapp">
                     <input
+                      id="booking-whatsapp"
+                      name="whatsappOptIn"
                       type="checkbox"
                       checked={contact.whatsappOptIn}
                       onChange={(event) => setContact({ ...contact, whatsappOptIn: event.target.checked })}
@@ -383,26 +396,20 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
                   <p className={styles.notice}>
                     Horario retenido por{" "}
                     <strong role="timer">
-                      {Math.floor((remaining ?? 0) / 60)}:{String((remaining ?? 0) % 60).padStart(2, "0")}
+                      {remaining === null ? "…" : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`}
                     </strong>{" "}
                     min.
                   </p>
                 )}
                 {error && <p className={styles.error} role="alert">{error}</p>}
                 <div className={styles.actions}>
-                  {expired ? (
-                    <button type="button" className={styles.primary} disabled={busy} onClick={releaseHold}>
-                      Elegir otro horario
+                  <button type="button" className={styles.primary} disabled={busy || remaining === null} onClick={expired ? releaseHold : confirm}>
+                    {busy ? "Un momento…" : expired ? "Elegir otro horario" : "Confirmar cita"}
+                  </button>
+                  {!expired && (
+                    <button type="button" className={styles.simpleButton} disabled={busy} onClick={releaseHold}>
+                      Cambiar horario
                     </button>
-                  ) : (
-                    <>
-                      <button type="button" className={styles.primary} disabled={busy} onClick={confirm}>
-                        {busy ? "Un momento…" : "Confirmar cita"}
-                      </button>
-                      <button type="button" className={styles.simpleButton} disabled={busy} onClick={releaseHold}>
-                        Cambiar horario
-                      </button>
-                    </>
                   )}
                 </div>
               </>
@@ -421,17 +428,7 @@ export default function BookingFlow({ catalog }: { catalog: Catalog }) {
             )}
           </div>
         </section>
-        <figure className={styles.art} aria-hidden="true">
-          <Image
-            key={step === "confirmed" ? "confirmed" : "booking"}
-            data-confirmed={step === "confirmed"}
-            src={step === "confirmed" ? "/ilustraciones/booking-confirmed.svg" : "/ilustraciones/booking-calm.svg"}
-            width={440}
-            height={280}
-            alt=""
-            unoptimized
-          />
-        </figure>
+        <Gomita pose={step === "service" ? "saludo" : step === "confirmed" ? "exito" : "pensando"} />
       </div>
     </main>
   );

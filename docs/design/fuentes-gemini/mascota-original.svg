@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 380" width="100%" height="100%" role="img" aria-label="Lumi - Mascota Asistente de Gómez Delgado Clínica Dental">
+  <defs>
+    <!-- Variables de personalización cromática -->
+    <style>
+      :root {
+        --mascot-body-fill: #FFFFFF;
+        --mascot-body-shade: #F3E8FF;
+        --mascot-stroke: #6C1D6E;
+        --mascot-accent: #9A348E;
+        --mascot-cape: #7C3AED;
+        --mascot-gold: #F59E0B;
+        --mascot-eye: #1E1B4B;
+        --mascot-blush: #F472B6;
+        --mascot-shadow: rgba(108, 29, 110, 0.16);
+      }
+      .anim-pulse { transform-origin: 170px 180px; }
+      .arm-l-pivot { transform-origin: 105px 175px; }
+      .arm-r-pivot { transform-origin: 235px 175px; }
+      .head-pivot { transform-origin: 170px 160px; }
+    </style>
+
+    <!-- Gradiente suave de volumen para el esmalte de Lumi -->
+    <linearGradient id="lumiBodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="70%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EDE9FE"/>
+    </linearGradient>
+
+    <!-- Gradiente para el broche / bufanda clínica -->
+    <linearGradient id="lumiCapeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9A348E"/>
+      <stop offset="100%" stop-color="#6C1D6E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Raíz de la mascota -->
+  <g id="mascot-root">
+
+    <!-- Sombra interactiva en suelo -->
+    <g id="shadow">
+      <ellipse cx="170" cy="336" rx="72" ry="14" fill="#6C1D6E" fill-opacity="0.16"/>
+    </g>
+
+    <!-- Pierna izquierda -->
+    <g id="leg-left">
+      <path d="M 134 278 C 134 298 126 318 128 326 C 129 330 134 332 142 332 C 150 332 154 326 152 320 C 149 308 148 290 148 278 Z" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Calzado clínico acolchado -->
+      <path d="M 124 322 C 124 332 148 334 154 325 C 152 320 142 318 124 322 Z" fill="#9A348E"/>
+    </g>
+
+    <!-- Pierna derecha -->
+    <g id="leg-right">
+      <path d="M 188 278 C 188 290 187 308 184 320 C 182 326 186 332 194 332 C 202 332 207 330 208 326 C 210 318 202 298 202 278 Z" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Calzado clínico acolchado -->
+      <path d="M 182 325 C 188 334 212 332 212 322 C 194 318 184 320 182 325 Z" fill="#9A348E"/>
+    </g>
+
+    <!-- Brazo izquierdo y mano articulable -->
+    <g id="arm-left" class="arm-l-pivot">
+      <path d="M 112 176 C 90 182 72 198 66 218 C 64 224 70 230 76 226 C 82 222 94 206 108 198" fill="none" stroke="#6C1D6E" stroke-width="6.5" stroke-linecap="round"/>
+      <!-- Mano izquierda -->
+      <g id="hand-left" transform="translate(62, 218)">
+        <ellipse cx="6" cy="6" rx="10" ry="9" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="2.5"/>
+        <circle cx="2" cy="1" r="3" fill="#EDE9FE"/>
+      </g>
+    </g>
+
+    <!-- Brazo derecho y mano articulable (con espejo dental o señalador) -->
+    <g id="arm-right" class="arm-r-pivot">
+      <path d="M 228 176 C 248 182 264 196 270 216 C 272 222 266 228 260 224 C 254 220 244 206 230 198" fill="none" stroke="#6C1D6E" stroke-width="6.5" stroke-linecap="round"/>
+      <!-- Mano derecha -->
+      <g id="hand-right" transform="translate(258, 214)">
+        <ellipse cx="6" cy="6" rx="10" ry="9" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="2.5"/>
+        <circle cx="10" cy="1" r="3" fill="#EDE9FE"/>
+      </g>
+    </g>
+
+    <!-- Accesorios (Espejo dental ergonómico de Lumi) -->
+    <g id="accessories">
+      <!-- Mango del espejo sostenido en mano derecha -->
+      <path d="M 264 220 L 288 178" fill="none" stroke="#9A348E" stroke-width="4" stroke-linecap="round"/>
+      <!-- Cabezal del espejo con reflejo azul/menta -->
+      <circle cx="294" cy="168" r="14" fill="#EDE9FE" stroke="#6C1D6E" stroke-width="2.5"/>
+      <ellipse cx="291" cy="164" rx="10" ry="8" fill="#FFFFFF" fill-opacity="0.9"/>
+      <line x1="286" y1="172" x2="298" y2="160" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.6"/>
+    </g>
+
+    <!-- Cuerpo y cabeza integrados (anatomía molar suave de Lumi) -->
+    <g id="body">
+      <!-- Capa / Bufanda de profesional de la salud con broche -->
+      <path d="M 124 230 C 144 246 196 246 216 230 C 220 248 212 266 170 268 C 128 266 120 248 124 230 Z" fill="url(#lumiCapeGrad)"/>
+      <circle cx="170" cy="254" r="8" fill="#F59E0B" stroke="#6C1D6E" stroke-width="1.5"/>
+      <circle cx="170" cy="254" r="3" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Cabeza y rostro del personaje -->
+    <g id="head" class="head-pivot">
+      <!-- Molar principal de curvas perfectas -->
+      <path d="M 136 84 C 114 84 96 104 94 136 C 90 178 106 226 124 274 C 128 284 138 288 144 278 C 154 262 160 244 170 244 C 180 244 186 262 196 278 C 202 288 212 284 216 274 C 234 226 250 178 246 136 C 244 104 226 84 204 84 C 188 84 178 96 170 96 C 162 96 152 84 136 84 Z" fill="url(#lumiBodyGrad)" stroke="#6C1D6E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Luz / reflejo de esmalte en cúspide superior izquierda -->
+      <path d="M 134 94 C 120 94 108 106 106 126 C 114 130 126 132 140 130" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Rubor en mejillas (*blush*) para máxima cercanía y empatía -->
+      <ellipse cx="120" cy="182" rx="12" ry="7" fill="#F472B6" fill-opacity="0.45"/>
+      <ellipse cx="220" cy="182" rx="12" ry="7" fill="#F472B6" fill-opacity="0.45"/>
+
+      <!-- Ojos de Lumi -->
+      <g id="eyes">
+        <!-- Ojo izquierdo -->
+        <g id="eye-left">
+          <ellipse cx="140" cy="162" rx="14" ry="18" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="2"/>
+          <!-- Pupila izquierda móvil -->
+          <g id="pupil-left" class="pupil-move">
+            <ellipse cx="142" cy="164" rx="10" ry="13" fill="#1E1B4B"/>
+            <circle cx="138" cy="158" r="4" fill="#FFFFFF"/>
+            <circle cx="145" cy="169" r="2" fill="#FFFFFF"/>
+          </g>
+        </g>
+
+        <!-- Ojo derecho -->
+        <g id="eye-right">
+          <ellipse cx="200" cy="162" rx="14" ry="18" fill="#FFFFFF" stroke="#6C1D6E" stroke-width="2"/>
+          <!-- Pupila derecha móvil -->
+          <g id="pupil-right" class="pupil-move">
+            <ellipse cx="198" cy="164" rx="10" ry="13" fill="#1E1B4B"/>
+            <circle cx="194" cy="158" r="4" fill="#FFFFFF"/>
+            <circle cx="201" cy="169" r="2" fill="#FFFFFF"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- Cejas expresivas articulables -->
+      <g id="eyebrows">
+        <!-- Ceja izquierda -->
+        <path id="eyebrow-left" d="M 128 138 C 134 132 146 132 152 136" fill="none" stroke="#6C1D6E" stroke-width="3" stroke-linecap="round"/>
+        <!-- Ceja derecha -->
+        <path id="eyebrow-right" d="M 188 136 C 194 132 206 132 212 138" fill="none" stroke="#6C1D6E" stroke-width="3" stroke-linecap="round"/>
+      </g>
+
+      <!-- Boca articulable y cambiador de estados de ánimo -->
+      <g id="mouth">
+        <!-- Sonrisa cálida estándar (Happy / Idle) -->
+        <path id="mouth-path" d="M 152 192 C 160 206 180 206 188 192" fill="#6C1D6E" stroke="#6C1D6E" stroke-width="2" stroke-linecap="round"/>
+        <!-- Lengua sutil y alegre -->
+        <path id="tongue-path" d="M 162 200 C 166 205 174 205 178 200 Z" fill="#F472B6"/>
+      </g>
+    </g>
+
+    <!-- Efectos visuales de higiene, destellos y bienestar -->
+    <g id="effects">
+      <!-- Destello estelar superior derecho -->
+      <g id="sparkle-top" transform="translate(242, 70)">
+        <path d="M 0 -12 Q 0 0 12 0 Q 0 0 0 12 Q 0 0 -12 0 Q 0 0 0 -12 Z" fill="#F59E0B"/>
+        <circle cx="0" cy="0" r="3" fill="#FFFFFF"/>
+      </g>
+      <!-- Destello menor lateral izquierdo -->
+      <g id="sparkle-left" transform="translate(86, 120)">
+        <path d="M 0 -7 Q 0 0 7 0 Q 0 0 0 7 Q 0 0 -7 0 Q 0 0 0 -7 Z" fill="#C084FC"/>
+      </g>
+    </g>
+  </g>
+</svg>

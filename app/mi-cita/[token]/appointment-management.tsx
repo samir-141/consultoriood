@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ClinicBrand } from "@/app/components/clinic-brand";
+import { Gomita } from "@/app/reservar/gomita";
 import {
   BookingError,
   bookingMessage,
@@ -119,12 +121,14 @@ export default function AppointmentManagement({ token }: { token: string }) {
 
   const canCancel = appointment?.status === "CONFIRMED" || appointment?.status === "PENDING";
   const canBookAgain = appointment?.status === "CANCELLED" || appointment?.status === "EXPIRED";
+  const gomitaPose = notice === messages.confirm ? "exito" : rescheduling || busy ? "pensando" : "saludo";
 
   return (
     <main className={styles.page}>
-      <Link className={styles.exitLink} href="/">Volver al inicio</Link>
-      <header className={styles.intro}>
+      <ClinicBrand />
+      <header className={`${styles.intro} ${styles.appointmentIntro}`}>
         <h1>Mi cita</h1>
+        <Gomita pose={gomitaPose} compact />
       </header>
       <section className={`${styles.card} ${styles.single}`} aria-label="Gestión de la cita">
         <div className={styles.stage}>

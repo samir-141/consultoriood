@@ -162,13 +162,23 @@ export function useSlots(date: string, serviceId: string, professionalId: string
 }
 
 export function useHoldClock(expiresAt: string | undefined) {
-  const [now, setNow] = useState(() => Date.now());
+  const [clock, setClock] = useState<{ expiresAt: string; seconds: number } | null>(null);
 
   useEffect(() => {
     if (!expiresAt) return;
-    const timer = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(timer);
+    const expiration = expiresAt;
+    const deadline = Date.parse(expiration);
+    let timer: ReturnType<typeof setTimeout>;
+
+    function tick() {
+      const remaining = deadline - Date.now();
+      setClock({ expiresAt: expiration, seconds: Math.max(0, Math.ceil(remaining / 1000)) });
+      if (remaining > 0) timer = setTimeout(tick, remaining % 1000 || 1000);
+    }
+
+    timer = setTimeout(tick, 0);
+    return () => clearTimeout(timer);
   }, [expiresAt]);
 
-  return expiresAt ? Math.max(0, Math.ceil((Date.parse(expiresAt) - now) / 1000)) : null;
+  return clock && clock.expiresAt === expiresAt ? clock.seconds : null;
 }
