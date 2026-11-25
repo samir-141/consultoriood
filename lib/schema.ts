@@ -30,6 +30,7 @@ export const baseSchema = `
     hold_request_hash text,
     dni text,
     reason text,
+    reminder_30m_sent_at timestamptz,
     CHECK (starts_at < ends_at AND ends_at <= occupied_until),
     CHECK (status <> 'PENDING' OR hold_expires_at IS NOT NULL),
     EXCLUDE USING gist (professional_id WITH =, tstzrange(starts_at, occupied_until, '[)') WITH &&)
@@ -38,12 +39,14 @@ export const baseSchema = `
   ALTER TABLE appointments ADD COLUMN IF NOT EXISTS hold_request_hash text;
   ALTER TABLE appointments ADD COLUMN IF NOT EXISTS dni text;
   ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reason text;
+  ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_30m_sent_at timestamptz;
   ALTER TABLE patients ADD COLUMN IF NOT EXISTS dni text;
 
   CREATE OR REPLACE VIEW reservas AS
     SELECT id, patient_id, service_id, service_name, professional_id, professional_name,
       starts_at, ends_at, occupied_until, hold_expires_at, manage_hash, opt_in,
-      price_cents, previous_id, status, created_at, hold_request_hash, dni, reason
+      price_cents, previous_id, status, created_at, hold_request_hash, dni, reason,
+      reminder_30m_sent_at
     FROM appointments;
 
   CREATE INDEX IF NOT EXISTS appointments_by_patient ON appointments(patient_id, starts_at DESC);

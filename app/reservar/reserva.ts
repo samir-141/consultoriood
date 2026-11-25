@@ -185,6 +185,17 @@ export type MonthlyAvailability = {
   days: Record<string, DayAvailabilityInfo>;
 };
 
+export type DayIntervalStatus = "available" | "occupied" | "blocked" | "cutoff" | "closed";
+
+export type DayInterval = {
+  time: string;
+  available: boolean;
+  status: DayIntervalStatus;
+  reason: string | null;
+  professionalId: string | null;
+  professionalName: string | null;
+};
+
 export type DailyAvailability = {
   fecha: string;
   date: string;
@@ -195,6 +206,7 @@ export type DailyAvailability = {
   mensajeWalkIn: string | null;
   horariosDisponibles: string[];
   horariosOcupados: string[];
+  intervalos?: DayInterval[];
   slots: Slot[];
 };
 

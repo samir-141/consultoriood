@@ -12,7 +12,6 @@ import {
   price,
   readableDate,
   reservationPath,
-  slotKey,
   todayInLima,
   useHoldClock,
   useMonthAvailability,
@@ -26,12 +25,17 @@ import {
 import { CalendarPicker } from "./calendar-picker";
 import styles from "./booking.module.css";
 
-// 4 pasos obligatorios del nuevo flujo:
-// 1. Elegir día en calendario
-// 2. Ver horarios disponibles de ese día
-// 3. Completar datos del paciente
-// 4. Pantalla de confirmación con el resumen
-type BookingStep = 1 | 2 | 3 | 4;
+// 3 pasos fluidos del nuevo flujo:
+// 1. Elegir día en calendario -> se despliega selector animado de horarios (30 min / 45 min)
+// 2. Completar datos del paciente
+// 3. Pantalla de confirmación con el resumen
+type BookingStep = 1 | 2 | 3;
+
+function addMinutesToTime(time: string, deltaMinutes: number) {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + deltaMinutes;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
 
 type PatientForm = {
   name: string;
@@ -94,9 +98,11 @@ export default function BookingFlow({
   const selectedDayState = monthDays?.[date];
   const isSelectedDateBlocked = Boolean(selectedDayState && !selectedDayState.reservable);
 
-  // Slots del backend mediante hook reactivo useSlots
-  const slotsHook = useSlots(date, serviceId, professionalId, step === 2);
+  // Slots del backend mediante hook reactivo useSlots (se abre automáticamente al seleccionar día válido)
+  const canQuerySlots = step === 1 && Boolean(date) && !isSelectedDateBlocked;
+  const slotsHook = useSlots(date, serviceId, professionalId, canQuerySlots);
   const availableSlots = slotsHook.slots;
+  const intervals = slotsHook.daily?.intervalos ?? [];
   const slotsLoading = slotsHook.loading;
   const slotsError = slotsHook.error;
 
@@ -116,15 +122,14 @@ export default function BookingFlow({
   const currentService = catalog.services.find((s) => s.id === serviceId) ?? catalog.services[0];
   const assignedDoctor = catalog.professionals.find((p) => p.id === professionalId) ?? catalog.professionals[0];
 
-  const remaining = useHoldClock(step === 4 && hold?.appointment?.status === "PENDING" ? hold?.expiresAt : undefined);
+  const remaining = useHoldClock(step === 3 && hold?.appointment?.status === "PENDING" ? hold?.expiresAt : undefined);
 
-  // Focus accesible al cambiar de paso
+  // Focus accesible al cambiar de paso principal
   useEffect(() => {
     headingRef.current?.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
-  // Navegar entre pasos
   function goToStep(next: BookingStep) {
     setServerError("");
     setStep(next);
@@ -179,14 +184,14 @@ export default function BookingFlow({
       const result = await postBooking<Hold>("/api/reservas", data, reservationAttempt.current.key);
       setHold(result);
       setAppointment(result.appointment);
-      goToStep(4);
+      goToStep(3);
     } catch (err) {
       if (err instanceof BookingError && (err.status === 409 || err.status === 410)) {
         setServerError(bookingMessage(err));
         setSelectedSlot(null);
         monthHook.refresh();
         slotsHook.refresh();
-        goToStep(2);
+        goToStep(1);
       } else {
         setServerError(bookingMessage(err));
       }
@@ -211,9 +216,65 @@ export default function BookingFlow({
     }
   }
 
-  // Agrupamiento de turnos para el Paso 2
-  const morningSlots = availableSlots.filter((s) => s.time < "12:00");
-  const afternoonSlots = availableSlots.filter((s) => s.time >= "12:00");
+  const scheduleRef = useRef<HTMLDivElement>(null);
+
+  // Agrupamiento de intervalos (30 min) para el selector desplegable
+  const morningIntervals = intervals.filter((item) => item.time < "12:00");
+  const afternoonIntervals = intervals.filter((item) => item.time >= "12:00");
+  const secondBlockTime =
+    selectedSlot && currentService && currentService.duration > 30
+      ? addMinutesToTime(selectedSlot.time, 30)
+      : null;
+
+  function renderIntervalButton(item: NonNullable<typeof slotsHook.daily>["intervalos"] extends (infer T)[] | undefined ? T : never) {
+    const isChosen = Boolean(
+      selectedSlot && selectedSlot.time === item.time && selectedSlot.date === date,
+    );
+    const isSecondCoveredBlock = Boolean(secondBlockTime && item.time === secondBlockTime);
+    const isDisabled = !item.available;
+
+    let statusLabel = "Disponible";
+    if (isChosen) {
+      statusLabel = currentService.duration > 30 ? "✓ 2 bloques" : "✓ Elegido";
+    } else if (isSecondCoveredBlock) {
+      statusLabel = "Incluido (45m)";
+    } else if (!item.available) {
+      if (item.status === "blocked") {
+        statusLabel = item.reason?.toLowerCase().includes("cirug") ? "Cirugía" : "Bloqueado";
+      } else if (item.status === "occupied") {
+        statusLabel = "Ocupado";
+      } else if (item.status === "cutoff") {
+        statusLabel = "< 15m / Cierre";
+      } else {
+        statusLabel = "No disp.";
+      }
+    }
+
+    return (
+      <button
+        key={item.time}
+        type="button"
+        disabled={isDisabled}
+        title={!item.available && item.reason ? item.reason : undefined}
+        className={`${styles.slotBtn} ${
+          isChosen || isSecondCoveredBlock ? styles.slotBtnChosen : ""
+        } ${isDisabled && !isSecondCoveredBlock ? styles.slotBtnLocked : ""}`}
+        onClick={() => {
+          if (!item.available) return;
+          setSelectedSlot({
+            date,
+            time: item.time,
+            professionalId: item.professionalId ?? assignedDoctor.id,
+            professionalName: item.professionalName ?? assignedDoctor.name,
+          });
+        }}
+        aria-pressed={isChosen}
+      >
+        <span className={styles.slotTime}>{item.time}</span>
+        <span className={styles.slotMeta}>{statusLabel}</span>
+      </button>
+    );
+  }
 
   return (
     <main className={styles.page}>
@@ -224,14 +285,13 @@ export default function BookingFlow({
         </Link>
       </header>
 
-      {/* Indicador de 4 pasos */}
+      {/* Indicador de 3 pasos */}
       <nav aria-label="Progreso de reserva" className={styles.stepProgressContainer}>
         <ol className={styles.stepProgressList}>
           {[
-            { num: 1, label: "Elegir día" },
-            { num: 2, label: "Horarios" },
-            { num: 3, label: "Tus datos" },
-            { num: 4, label: "Confirmación" },
+            { num: 1, label: "Día y horario" },
+            { num: 2, label: "Tus datos" },
+            { num: 3, label: "Confirmación" },
           ].map(({ num, label }) => (
             <li
               key={num}
@@ -249,15 +309,17 @@ export default function BookingFlow({
       </nav>
 
       <div className={styles.flowContainer}>
-        {/* PASO 1: ELEGIR DÍA EN UN CALENDARIO */}
+        {/* PASO 1: CALENDARIO + SELECTOR DESPLEGABLE DE HORARIOS */}
         {step === 1 && (
           <section className={styles.stepCard} aria-labelledby="step-1-heading">
             <h1 id="step-1-heading" tabIndex={-1} ref={headingRef} className={styles.stepTitle}>
-              Paso 1: Elige el día en el calendario
+              Paso 1: Elige el día y horario
             </h1>
             <p className={styles.stepSubtitle}>
-              Selecciona una fecha disponible para tu atención. Los días sin horarios disponibles, domingos y fechas pasadas están deshabilitados.
+              Selecciona una fecha en el calendario para desplegar los horarios disponibles. Los días sin cupos o sin doctores disponibles están deshabilitados.
             </p>
+
+            {serverError && <div className={styles.errorAlert}>{serverError}</div>}
 
             {/* Regla condicional: Selector de servicio solo si hay más de uno */}
             {catalog.services.length > 1 ? (
@@ -268,7 +330,10 @@ export default function BookingFlow({
                 <select
                   id="service-select"
                   value={serviceId}
-                  onChange={(e) => setServiceId(e.target.value)}
+                  onChange={(e) => {
+                    setServiceId(e.target.value);
+                    setSelectedSlot(null);
+                  }}
                   className={styles.selectInput}
                 >
                   {catalog.services.map((s) => (
@@ -293,7 +358,10 @@ export default function BookingFlow({
                 <select
                   id="doctor-select"
                   value={professionalId}
-                  onChange={(e) => setProfessionalId(e.target.value)}
+                  onChange={(e) => {
+                    setProfessionalId(e.target.value);
+                    setSelectedSlot(null);
+                  }}
                   className={styles.selectInput}
                 >
                   <option value="any">Primer profesional disponible</option>
@@ -313,7 +381,7 @@ export default function BookingFlow({
               </div>
             )}
 
-            {/* Calendario con fechas pasadas, domingos y días sin cupo deshabilitados */}
+            {/* Calendario con fechas pasadas, domingos, cirugías/días sin doctores y días llenos deshabilitados */}
             <div className={styles.calendarWrapper}>
               <CalendarPicker
                 selectedDate={date}
@@ -332,7 +400,9 @@ export default function BookingFlow({
 
             {isSelectedDateBlocked ? (
               <div className={styles.errorAlert}>
-                El día seleccionado ya no tiene horarios web disponibles y no es reservable. Elige otra fecha en el calendario.
+                {selectedDayState?.status === "NO_DOCTORS"
+                  ? "No hay doctores disponibles en esta fecha (agenda bloqueada). Por favor selecciona otro día."
+                  : "El día seleccionado ya no tiene horarios web disponibles y no es reservable. Elige otra fecha en el calendario."}
               </div>
             ) : (
               <div className={styles.selectedDateBanner}>
@@ -358,173 +428,125 @@ export default function BookingFlow({
               </div>
             </div>
 
-            <div className={styles.actionRow}>
-              <button
-                type="button"
-                className="button"
-                disabled={isSelectedDateBlocked || !date}
-                onClick={() => goToStep(2)}
+            {/* SELECTOR DE HORARIO DESPLEGABLE ANIMADO AL SELECCIONAR FECHA VÁLIDA */}
+            {!isSelectedDateBlocked && date && (
+              <div
+                key={`${date}-${serviceId}`}
+                ref={scheduleRef}
+                className={styles.scheduleDrawer}
+                aria-live="polite"
               >
-                Ver horarios disponibles <PublicIcon name="arrow" />
-              </button>
-            </div>
+                <div className={styles.scheduleDrawerHeader}>
+                  <h2 className={styles.scheduleDrawerTitle}>
+                    Horarios para el {readableDate(date)}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => slotsHook.refresh()}
+                    className={styles.refreshBtn}
+                  >
+                    Actualizar cupos
+                  </button>
+                </div>
+
+                <div className={styles.intervalPolicyNote}>
+                  {currentService.duration > 30 ? (
+                    <>
+                      Los intervalos son de <strong>30 min</strong> y <strong>{currentService.name}</strong> dura{" "}
+                      <strong>{currentService.duration} min</strong>: al elegir una hora, se bloquearán{" "}
+                      <strong>2 bloques consecutivos</strong> para evitar cruces de atención.
+                    </>
+                  ) : (
+                    <>
+                      Intervalos de <strong>30 min</strong> ({currentService.duration} min por consulta). Los horarios en gris ya están reservados, en cirugía o bloqueados.
+                    </>
+                  )}
+                </div>
+
+                {slotsLoading && (
+                  <div className={styles.loadingBox}>
+                    <span className={styles.spinner} />
+                    <p>Consultando horarios disponibles en tiempo real con el consultorio...</p>
+                  </div>
+                )}
+
+                {!slotsLoading && slotsError && (
+                  <div className={styles.errorAlert}>
+                    <p>{slotsError}</p>
+                    <button
+                      type="button"
+                      onClick={() => slotsHook.refresh()}
+                      className={styles.retryBtn}
+                    >
+                      Reintentar consulta
+                    </button>
+                  </div>
+                )}
+
+                {!slotsLoading && !slotsError && availableSlots.length === 0 && (
+                  <div className={styles.emptyBox}>
+                    <PublicIcon name="calendar" />
+                    <h3>Este día ya no es reservable en línea</h3>
+                    <p>
+                      {slotsHook.daily?.mensajeWalkIn ||
+                        "Todos los turnos de esta fecha están ocupados, bloqueados o superaron el límite de 15 minutos previos."}
+                    </p>
+                  </div>
+                )}
+
+                {!slotsLoading && !slotsError && availableSlots.length > 0 && (
+                  <div className={styles.slotsContainer}>
+                    {morningIntervals.length > 0 && (
+                      <div className={styles.slotGroup}>
+                        <h3 className={styles.slotGroupTitle}>Mañana (09:00 a 12:00)</h3>
+                        <div className={styles.slotGrid}>
+                          {morningIntervals.map((item) => renderIntervalButton(item))}
+                        </div>
+                      </div>
+                    )}
+
+                    {afternoonIntervals.length > 0 && (
+                      <div className={styles.slotGroup}>
+                        <h3 className={styles.slotGroupTitle}>Tarde (12:00 a 17:00)</h3>
+                        <div className={styles.slotGrid}>
+                          {afternoonIntervals.map((item) => renderIntervalButton(item))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedSlot && (
+                      <div className={styles.chosenSlotBanner}>
+                        Horario seleccionado y bloqueado para ti:{" "}
+                        <strong>
+                          {selectedSlot.time}
+                          {secondBlockTime ? ` – ${addMinutesToTime(selectedSlot.time, currentService.duration)} (2 bloques de 30 min)` : ""}
+                        </strong>{" "}
+                        del {readableDate(selectedSlot.date)}
+                      </div>
+                    )}
+
+                    <div className={styles.actionRow}>
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={!selectedSlot}
+                        onClick={() => goToStep(2)}
+                      >
+                        Completar mis datos <PublicIcon name="arrow" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
 
-        {/* PASO 2: VER HORARIOS DISPONIBLES */}
-        {step === 2 && (
+        {/* PASO 2: COMPLETAR DATOS DEL PACIENTE */}
+        {step === 2 && selectedSlot && (
           <section className={styles.stepCard} aria-labelledby="step-2-heading">
             <h1 id="step-2-heading" tabIndex={-1} ref={headingRef} className={styles.stepTitle}>
-              Paso 2: Horarios disponibles
-            </h1>
-            <p className={styles.stepSubtitle}>
-              Para el <strong>{readableDate(date)}</strong> con {assignedDoctor.name} · {currentService.name}.
-            </p>
-
-            {serverError && <div className={styles.errorAlert}>{serverError}</div>}
-
-            {(slotsHook.daily?.walkInDisponible || date === todayStr) && (
-              <div className={styles.walkInBanner}>
-                <PublicIcon name="clock" />
-                <div>
-                  <strong>Atención el mismo día (regla de 15 minutos)</strong>
-                  <span>
-                    {slotsHook.daily?.mensajeWalkIn ||
-                      "Las reservas web requieren mínimo 15 minutos de anticipación. Si pasas ese tiempo o necesitas atención inmediata hoy, se aceptan consultas presenciales en el consultorio (con posible espera)."}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Estados: Carga, Error o Sin horarios */}
-            {slotsLoading && (
-              <div className={styles.loadingBox}>
-                <span className={styles.spinner} />
-                <p>Consultando horarios disponibles en tiempo real con el consultorio...</p>
-              </div>
-            )}
-
-            {!slotsLoading && slotsError && (
-              <div className={styles.errorAlert}>
-                <p>{slotsError}</p>
-                <button
-                  type="button"
-                  onClick={() => slotsHook.refresh()}
-                  className={styles.retryBtn}
-                >
-                  Reintentar consulta
-                </button>
-              </div>
-            )}
-
-            {!slotsLoading && !slotsError && availableSlots.length === 0 && (
-              <div className={styles.emptyBox}>
-                <PublicIcon name="calendar" />
-                <h3>Este día ya no es reservable en línea</h3>
-                <p>
-                  {slotsHook.daily?.mensajeWalkIn ||
-                    "Todos los turnos de esta fecha han sido ocupados o superaron el límite de 15 minutos previos al horario."}
-                </p>
-                <button
-                  type="button"
-                  className="button-secondary"
-                  onClick={() => {
-                    monthHook.refresh();
-                    goToStep(1);
-                  }}
-                >
-                  Elegir otro día disponible en el calendario
-                </button>
-              </div>
-            )}
-
-            {!slotsLoading && !slotsError && availableSlots.length > 0 && (
-              <div className={styles.slotsContainer}>
-                {morningSlots.length > 0 && (
-                  <div className={styles.slotGroup}>
-                    <h3 className={styles.slotGroupTitle}>Mañana (09:00 a 12:00)</h3>
-                    <div className={styles.slotGrid}>
-                      {morningSlots.map((slot) => {
-                        const isChosen =
-                          selectedSlot &&
-                          slotKey(selectedSlot) === slotKey(slot) &&
-                          selectedSlot.date === slot.date;
-                        return (
-                          <button
-                            key={slotKey(slot)}
-                            type="button"
-                            className={`${styles.slotBtn} ${isChosen ? styles.slotBtnChosen : ""}`}
-                            onClick={() => setSelectedSlot(slot)}
-                            aria-pressed={Boolean(isChosen)}
-                          >
-                            <span className={styles.slotTime}>{slot.time}</span>
-                            {isChosen && <span className={styles.checkIcon}>✓</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {afternoonSlots.length > 0 && (
-                  <div className={styles.slotGroup}>
-                    <h3 className={styles.slotGroupTitle}>Tarde (12:00 a 17:00)</h3>
-                    <div className={styles.slotGrid}>
-                      {afternoonSlots.map((slot) => {
-                        const isChosen =
-                          selectedSlot &&
-                          slotKey(selectedSlot) === slotKey(slot) &&
-                          selectedSlot.date === slot.date;
-                        return (
-                          <button
-                            key={slotKey(slot)}
-                            type="button"
-                            className={`${styles.slotBtn} ${isChosen ? styles.slotBtnChosen : ""}`}
-                            onClick={() => setSelectedSlot(slot)}
-                            aria-pressed={Boolean(isChosen)}
-                          >
-                            <span className={styles.slotTime}>{slot.time}</span>
-                            {isChosen && <span className={styles.checkIcon}>✓</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {selectedSlot && (
-                  <div className={styles.chosenSlotBanner}>
-                    Turno seleccionado: <strong>{selectedSlot.time}</strong> del {readableDate(selectedSlot.date)}
-                  </div>
-                )}
-
-                <div className={styles.actionRow}>
-                  <button
-                    type="button"
-                    className="button"
-                    disabled={!selectedSlot}
-                    onClick={() => goToStep(3)}
-                  >
-                    Completar mis datos <PublicIcon name="arrow" />
-                  </button>
-                  <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={() => goToStep(1)}
-                  >
-                    Cambiar fecha
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* PASO 3: COMPLETAR DATOS DEL PACIENTE */}
-        {step === 3 && selectedSlot && (
-          <section className={styles.stepCard} aria-labelledby="step-3-heading">
-            <h1 id="step-3-heading" tabIndex={-1} ref={headingRef} className={styles.stepTitle}>
-              Paso 3: Completa tus datos de paciente
+              Paso 2: Completa tus datos de paciente
             </h1>
             <p className={styles.stepSubtitle}>
               Cita para el <strong>{readableDate(selectedSlot.date)} a las {selectedSlot.time}</strong> · {currentService.name}.
@@ -633,7 +655,7 @@ export default function BookingFlow({
                 <button
                   type="button"
                   className="button-secondary"
-                  onClick={() => goToStep(2)}
+                  onClick={() => goToStep(1)}
                   disabled={submitting}
                 >
                   Cambiar horario
@@ -643,9 +665,9 @@ export default function BookingFlow({
           </section>
         )}
 
-        {/* PASO 4: PANTALLA DE CONFIRMACIÓN */}
-        {step === 4 && (appointment || hold?.appointment) && (
-          <section className={styles.stepCard} aria-labelledby="step-4-heading">
+        {/* PASO 3: PANTALLA DE CONFIRMACIÓN */}
+        {step === 3 && (appointment || hold?.appointment) && (
+          <section className={styles.stepCard} aria-labelledby="step-3-heading">
             {(() => {
               const appt = appointment ?? hold!.appointment;
               const isConfirmed = appt.status === "CONFIRMED";
@@ -654,7 +676,7 @@ export default function BookingFlow({
                 <>
                   <div className={styles.successHeader}>
                     <div className={styles.successIcon}>✓</div>
-                    <h1 id="step-4-heading" tabIndex={-1} ref={headingRef} className={styles.stepTitle}>
+                    <h1 id="step-3-heading" tabIndex={-1} ref={headingRef} className={styles.stepTitle}>
                       {isConfirmed ? "¡Tu cita ha sido confirmada!" : "¡Tu turno ha sido reservado!"}
                     </h1>
                     <p className={styles.stepSubtitle}>

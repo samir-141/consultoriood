@@ -72,6 +72,8 @@ test.describe("Agente Visual - Responsive, Capturas, Hero 100svh y Paleta Azul",
     for (const width of [360, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/reservar");
+      await expect(page.locator("button:has-text('Disponible')").first()).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(350); // esperar fin de animación de apertura
 
       const hasHorizontalOverflow = await page.evaluate(() => {
         return document.documentElement.scrollWidth > document.documentElement.clientWidth;
