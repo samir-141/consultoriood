@@ -94,7 +94,9 @@ export function CalendarPicker({
     let reason = "";
     if (isPast) reason = "fecha pasada";
     else if (isNonWorking) reason = "domingo no laborable";
-    else if (serverState?.status === "FULL") reason = "sin horarios disponibles";
+    else if (serverState?.status === "NO_DOCTORS") {
+      reason = "sin doctores disponibles en esta fecha";
+    } else if (serverState?.status === "FULL") reason = "sin horarios disponibles";
     else if (serverState?.status === "CUTOFF_WALKIN" || serverState?.status === "AFTER_HOURS") {
       reason = "sin reservas web (consultas presenciales en consultorio)";
     } else if (isFutureLimit) reason = "fuera del horizonte de reservas";

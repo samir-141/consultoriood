@@ -14,7 +14,8 @@ export type Status = "PENDING" | "CONFIRMED" | "CANCELLED" | "EXPIRED" | "RESCHE
 export type Appointment = {
   id: string; date: string; time: string; endTime: string; serviceId: string;
   serviceName: string; professionalId: string; professionalName: string; patientId: string;
-  patientName: string; status: Status; priceCents: number;
+  patientName: string; patientPhone?: string | null; status: Status; priceCents: number;
+  reminder30mSentAt?: string | null;
 };
 export type Block = {
   id: string; date: string; time: string; endTime: string;

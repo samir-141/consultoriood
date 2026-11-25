@@ -24,6 +24,9 @@ test.describe("Agente de Bugs - Pruebas de Robustez, Límites y Errores", () => 
   });
 
   test("GET /api/reservas valida parámetros y devuelve horarios ocupados y disponibles", async ({ request }) => {
+    // Calentamiento de ruta en modo dev para medir latencia real de la API
+    await request.get("/api/reservas?fecha=2026-12-15&servicio=evaluacion");
+
     const start = Date.now();
     const res = await request.get("/api/reservas?fecha=2026-12-15&servicio=evaluacion");
     const duration = Date.now() - start;
@@ -155,5 +158,77 @@ test.describe("Agente de Bugs - Pruebas de Robustez, Límites y Errores", () => 
     if ((data.horariosDisponibles as string[]).length === 0) {
       expect(data.reservable).toBe(false);
     }
+  });
+
+  test("Reserva de 45 min bloquea 2 intervalos de 30 min y bloqueos de doctor anulan reservas del día", async ({ request }) => {
+    // 1. Verificar servicio de 45 min en un día futuro despejado (ej. 2026-12-22 martes)
+    const cleanDay = "2026-12-22";
+    const holdRes = await request.post("/api/reservas", {
+      data: {
+        date: cleanDay,
+        time: "09:00",
+        serviceId: "limpieza", // 45 min -> 09:00 a 09:45
+        name: "Prueba Intervalos 45m",
+        phone: "966555444",
+      },
+    });
+    expect([201, 409]).toContain(holdRes.status());
+
+    if (holdRes.status() === 201) {
+      const holdJson = await holdRes.json();
+      const dayRes = await request.get(`/api/reservas?fecha=${cleanDay}&servicio=evaluacion`);
+      const dayJson = await dayRes.json();
+      const i0900 = dayJson.intervalos.find((x: { time: string }) => x.time === "09:00");
+      const i0930 = dayJson.intervalos.find((x: { time: string }) => x.time === "09:30");
+      const i1000 = dayJson.intervalos.find((x: { time: string }) => x.time === "10:00");
+      expect(i0900?.available).toBe(false);
+      expect(i0930?.available).toBe(false);
+      expect(i1000?.available).toBe(true);
+
+      // Cancelar cita de prueba para dejar limpia la agenda
+      await request.post(`/api/reservas/${holdJson.token}`, { data: { action: "cancel" } });
+    }
+
+    // 2. Doctor toma día libre completo (2026-12-23 miércoles) -> día deja de ser reservable
+    const loginRes = await request.post("/api/sesion", {
+      data: { email: "odontologia@demo.test", password: "DemoDental!101" },
+    });
+    expect(loginRes.status()).toBe(200);
+
+    const blockedDay = "2026-12-23";
+    const blockRes = await request.post("/api/panel/agenda", {
+      data: {
+        action: "block",
+        professionalId: "odonto-a",
+        date: blockedDay,
+        time: "09:00",
+        endTime: "17:00",
+        reason: "Día libre del profesional",
+      },
+    });
+    expect(blockRes.status()).toBe(200);
+    const { id: blockId } = await blockRes.json();
+
+    const blockedMonthRes = await request.get(`/api/reservas?mes=2026-12&servicio=evaluacion`);
+    const blockedMonth = await blockedMonthRes.json();
+    expect(blockedMonth.days[blockedDay].reservable).toBe(false);
+    expect(blockedMonth.days[blockedDay].status).toBe("NO_DOCTORS");
+
+    const attemptRes = await request.post("/api/reservas", {
+      data: {
+        date: blockedDay,
+        time: "10:00",
+        serviceId: "evaluacion",
+        name: "Paciente En Día Libre",
+        phone: "966000111",
+      },
+    });
+    expect(attemptRes.status()).toBe(409);
+
+    // Limpiar bloqueo
+    const unblockRes = await request.post("/api/panel/agenda", {
+      data: { action: "unblock", blockId },
+    });
+    expect(unblockRes.status()).toBe(200);
   });
 });

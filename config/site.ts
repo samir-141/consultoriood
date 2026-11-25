@@ -22,7 +22,8 @@ export const schedule = {
   openingHour: 9,
   closingHour: 17,
   slotMinutes: 15,
-  bufferMinutes: 10,
+  displayStepMinutes: 30,
+  bufferMinutes: 0,
   minAdvanceMinutes: 15, // Reserva en línea requiere mínimo 15 min de anticipación
   horizonDays: 90,
 };

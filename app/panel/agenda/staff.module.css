@@ -88,13 +88,45 @@
 .metrics dt { color: var(--staff-muted); font-size: .91rem; overflow-wrap: anywhere; }
 .metrics dd { font-size: 1.55rem; font-weight: 700; margin: 0; }
 .screenLoading { padding: 2rem; }
+.orderBadge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.85rem; height: 1.85rem; padding-inline: .35rem;
+  border-radius: .45rem; background: var(--blue-soft, #f0f7ff);
+  border: 1px solid var(--blue-soft-border, #bfdbfe);
+  color: var(--blue-deep, #0a2540); font-weight: 800; font-size: .82rem;
+}
+.queueRow {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .65rem;
+  align-items: center; border: 1px solid var(--staff-line); border-radius: .65rem;
+  padding: .65rem .8rem; background: var(--staff-paper);
+}
+.reminderAlert {
+  border: 1px solid #f59e0b; border-left: 4px solid #d97706;
+  background: #fffbeb; border-radius: .65rem; padding: .75rem .9rem;
+  display: grid; gap: .5rem;
+}
+.reminderUpcoming {
+  border: 1px solid var(--staff-line); background: var(--staff-mint);
+  border-radius: .65rem; padding: .7rem .9rem; display: grid; gap: .4rem;
+}
+.reminderDoneBadge {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .2rem .5rem; border-radius: .4rem;
+  background: #dcfce7; color: #166534; font-size: .78rem; font-weight: 700;
+}
+.presetRow { display: flex; flex-wrap: wrap; gap: .45rem; }
+.futureBotBox {
+  border: 1px solid var(--blue-soft-border, #bfdbfe);
+  border-left: 4px solid var(--staff-green);
+  background: var(--staff-mint); border-radius: .75rem; padding: 1rem 1.15rem;
+}
 @media (max-width: 45rem) {
   .shortcuts { grid-template-columns: minmax(0, 1fr); }
   .account span { display: none; }
 }
 @media (max-width: 31rem) {
   .wrap { width: calc(100% - 1.25rem); }
-  .columns, .detailsGrid { grid-template-columns: minmax(0, 1fr); }
+  .columns, .detailsGrid, .queueRow { grid-template-columns: minmax(0, 1fr); }
   .nav { gap: .2rem; }
   .nav a { padding-inline: .52rem; font-size: .875rem; }
   .event { grid-template-columns: auto minmax(0, 1fr); }

@@ -40,66 +40,91 @@ test.describe("Agente de Funcionalidad - Flujo Completo y Reglas de Negocio", ()
     await expect(page.locator("text=/posible espera/i").first()).toBeVisible();
   });
 
-  test("Flujo completo: Calendario -> Horarios -> Datos del paciente -> Confirmación", async ({ page }) => {
+  test("Flujo completo: Calendario -> Selector desplegable de horarios -> Datos -> Confirmación", async ({ page }) => {
     const pageStart = Date.now();
     await page.goto("/reservar");
     const pageLoadTime = Date.now() - pageStart;
     expect(pageLoadTime).toBeLessThan(3500);
 
-    // Paso 1: Elegir día en calendario
+    // Paso 1: Calendario visible y selector desplegable al seleccionar fecha
     await expect(page.locator("h1")).toContainText("Paso 1");
 
-    // Seleccionar una fecha futura válida (por ejemplo dentro de 5 días)
     const today = new Date();
     const futureDate = new Date(today);
     futureDate.setDate(today.getDate() + 5);
-    // Si cae domingo, sumar un día
     if (futureDate.getDay() === 0) {
       futureDate.setDate(futureDate.getDate() + 1);
     }
     const futureDateStr = futureDate.toISOString().slice(0, 10);
 
-    // Usar el input de fecha o click en el día
     const dateInput = page.locator("#calendar-date-input");
     await dateInput.fill(futureDateStr);
 
-    // Click en "Ver horarios disponibles"
-    const nextBtn = page.getByRole("button", { name: /ver horarios disponibles/i });
-    await nextBtn.click();
+    // El selector de horarios se despliega automáticamente en la misma vista
+    await expect(page.locator("h2:has-text('Horarios para el')")).toBeVisible({ timeout: 10000 });
 
-    // Paso 2: Horarios disponibles
-    await expect(page.locator("h1")).toContainText("Paso 2");
+    const firstAvailableSlot = page.locator("button:has-text('Disponible')").first();
+    await expect(firstAvailableSlot).toBeVisible({ timeout: 10000 });
+    await firstAvailableSlot.click();
 
-    // Esperar a que carguen los slots disponibles
-    const slotButtons = page.locator("button:has-text(':')");
-    await expect(slotButtons.first()).toBeVisible({ timeout: 10000 });
+    // Al seleccionar un horario se marca y bloquea como elegido
+    await expect(page.locator("text=Horario seleccionado y bloqueado para ti:")).toBeVisible();
 
-    // Elegir el primer slot disponible
-    await slotButtons.first().click();
-
-    // Continuar al paso 3
+    // Continuar al paso 2 (Datos del paciente)
     const toPatientBtn = page.getByRole("button", { name: /completar mis datos/i });
     await expect(toPatientBtn).toBeEnabled();
     await toPatientBtn.click();
 
-    // Paso 3: Completar datos del paciente
-    await expect(page.locator("h1")).toContainText("Paso 3");
+    // Paso 2: Completar datos del paciente
+    await expect(page.locator("h1")).toContainText("Paso 2");
 
-    // Llenar formulario
     await page.locator("#patient-name").fill("Juan Carlos Quispe");
     await page.locator("#patient-phone").fill("966987654");
     await page.locator("#patient-dni").fill("72345678");
     await page.locator("#patient-email").fill("juan.quispe@example.pe");
     await page.locator("#patient-reason").fill("Revisión general y limpieza preventiva");
 
-    // Click en Confirmar reserva
     const submitBtn = page.getByRole("button", { name: /confirmar reserva/i });
     await submitBtn.click();
 
-    // Paso 4: Pantalla de confirmación
+    // Paso 3: Pantalla de confirmación
     await expect(page.locator("h1")).toContainText("¡Tu", { timeout: 10000 });
     await expect(page.locator("text=Juan Carlos Quispe")).toBeVisible();
     await expect(page.locator("text=Edu Gómez Delgado")).toBeVisible();
     await expect(page.locator("text=Huamanga")).toBeVisible();
+  });
+
+  test("Lógica 45 min en intervalos de 30 min: bloquea 2 bloques consecutivos y cirugías/días libres bloquean la agenda", async ({ page }) => {
+    await page.goto("/reservar");
+    const serviceSelect = page.locator("#service-select");
+    await serviceSelect.selectOption("limpieza"); // 45 min
+
+    await expect(page.locator("text=se bloquearán")).toBeVisible();
+    await expect(page.locator("text=2 bloques consecutivos")).toBeVisible();
+
+    const firstSlot = page.locator("button:has-text('Disponible')").first();
+    await expect(firstSlot).toBeVisible({ timeout: 10000 });
+    await firstSlot.click();
+
+    // Verifica que indique 2 bloques de 30 min cubiertos
+    await expect(page.locator("text=✓ 2 bloques")).toBeVisible();
+    await expect(page.locator("text=Incluido (45m)")).toBeVisible();
+  });
+
+  test("Panel de recepción y odontólogo: card de orden, recordatorio 30m y permisos de día libre", async ({ page }) => {
+    await page.goto("/ingresar");
+    await page.getByLabel("Correo").fill("recepcion@demo.test");
+    await page.getByLabel("Contraseña").fill("DemoDental!101");
+    await page.getByRole("button", { name: /ingresar al panel/i }).click();
+
+    await page.waitForURL("**/panel");
+    await expect(page.locator("#reminders-30m-title")).toContainText("Confirmación de visita (30 min antes)");
+    await expect(page.locator("#today-title")).toContainText("Orden de pacientes hoy");
+
+    await page.goto("/panel/mensajes");
+    await expect(page.locator("#future-bot-heading")).toContainText("Bot de WhatsApp con API Local");
+
+    await page.goto("/panel/agenda");
+    await expect(page.getByRole("button", { name: /cirugía \/ día libre/i })).toBeVisible();
   });
 });

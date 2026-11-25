@@ -12,23 +12,40 @@ type Input = Record<string, unknown>;
 type Service = (typeof services)[number];
 type Professional = (typeof professionals)[number];
 type Appointment = {
-  id: string; patientId: string; patientName: string; serviceId: string; serviceName: string;
+  id: string; patientId: string; patientName: string; patientPhone: string;
+  serviceId: string; serviceName: string;
   professionalId: string; professionalName: string; status: string; priceCents: number;
   startsAt: Date; endsAt: Date; occupiedUntil: Date; expiresAt: Date | null;
   manageHash: string | null; holdRequestHash: string | null; optIn: boolean;
-  dni?: string | null; reason?: string | null;
+  dni?: string | null; reason?: string | null; reminder30mSentAt?: Date | null;
 };
 type Block = { id: string; professionalId: string; reason: string; startsAt: Date; endsAt: Date };
 type Slot = { date: string; time: string; professionalId: string; professionalName: string };
+type BusyInterval = {
+  kind: "appointment" | "block";
+  professionalId: string;
+  startsAt: Date;
+  endsAt: Date;
+  reason: string | null;
+};
+export type IntervalStatus = "available" | "occupied" | "blocked" | "cutoff" | "closed";
+export type DayInterval = {
+  time: string;
+  available: boolean;
+  status: IntervalStatus;
+  reason: string | null;
+  professionalId: string | null;
+  professionalName: string | null;
+};
 
 const rowColumns = `
-  SELECT a.id, a.patient_id AS "patientId", p.name AS "patientName",
+  SELECT a.id, a.patient_id AS "patientId", p.name AS "patientName", p.phone AS "patientPhone",
     a.service_id AS "serviceId", a.service_name AS "serviceName",
     a.professional_id AS "professionalId", a.professional_name AS "professionalName", a.status,
     a.price_cents AS "priceCents", a.starts_at AS "startsAt", a.ends_at AS "endsAt",
     a.occupied_until AS "occupiedUntil", a.hold_expires_at AS "expiresAt",
     a.manage_hash AS "manageHash", a.hold_request_hash AS "holdRequestHash", a.opt_in AS "optIn",
-    a.dni AS "dni", a.reason AS "reason"
+    a.dni AS "dni", a.reason AS "reason", a.reminder_30m_sent_at AS "reminder30mSentAt"
     FROM appointments a JOIN patients p ON p.id = a.patient_id
 `;
 const activeCondition = `(status IN ('CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED')
@@ -85,7 +102,26 @@ function withinHours(date: string, start: Date, occupied: Date, now: Date) {
     && occupied <= atLima(date, closingTime);
 }
 
-function evaluateDayStatus(date: string, availableCount: number, now: Date) {
+function dayTimes(stepMinutes: number) {
+  const times: string[] = [];
+  for (let minute = schedule.openingHour * 60; minute < schedule.closingHour * 60; minute += stepMinutes) {
+    times.push(String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0"));
+  }
+  return times;
+}
+
+function isWorkingBookableDate(date: string, now: Date) {
+  const today = limaDate(now);
+  const horizon = addDays(today, schedule.horizonDays);
+  return date >= today && date <= horizon && schedule.workingDays.includes(atLima(date).getUTCDay());
+}
+
+function evaluateDayStatus(
+  date: string,
+  availableCount: number,
+  now: Date,
+  options: { allDoctorsBlocked?: boolean; hasDoctors?: boolean } = {},
+) {
   const today = limaDate(now);
   const horizon = addDays(today, schedule.horizonDays);
   const isWorking = schedule.workingDays.includes(atLima(date).getUTCDay());
@@ -100,6 +136,9 @@ function evaluateDayStatus(date: string, availableCount: number, now: Date) {
   if (!isWorking) {
     return { reservable: false, status: "CLOSED" as const, walkInAvailable: false, walkInMessage: null };
   }
+  if (options.hasDoctors === false) {
+    return { reservable: false, status: "NO_DOCTORS" as const, walkInAvailable: false, walkInMessage: null };
+  }
 
   const isToday = date === today;
   const clinicStillOpenToday = isToday && now < closing;
@@ -111,6 +150,10 @@ function evaluateDayStatus(date: string, availableCount: number, now: Date) {
       walkInAvailable: clinicStillOpenToday,
       walkInMessage: clinicStillOpenToday ? clinic.walkInNotice : null,
     };
+  }
+
+  if (options.allDoctorsBlocked) {
+    return { reservable: false, status: "NO_DOCTORS" as const, walkInAvailable: false, walkInMessage: null };
   }
 
   if (isToday) {
@@ -141,14 +184,18 @@ function asAppointment(row: Appointment, now = new Date()) {
     id: row.id, date: limaDate(row.startsAt), time: limaTime(row.startsAt), endTime: limaTime(row.endsAt),
     serviceId: row.serviceId, serviceName: row.serviceName, professionalId: row.professionalId,
     professionalName: row.professionalName, patientId: row.patientId, patientName: row.patientName,
+    patientPhone: row.patientPhone,
     status, priceCents: row.priceCents, expiresAt: status === "PENDING" ? deadline : null,
     dni: row.dni ?? null, reason: row.reason ?? null,
+    reminder30mSentAt: row.reminder30mSentAt ?? null,
   };
 }
 
 function asPublic(row: Appointment) {
-  const { patientId, ...appointment } = asAppointment(row);
+  const { patientId, patientPhone, reminder30mSentAt, ...appointment } = asAppointment(row);
   void patientId;
+  void patientPhone;
+  void reminder30mSentAt;
   return appointment;
 }
 
@@ -193,35 +240,230 @@ async function overlapping(sql: Sql, professionalId: string, start: Date, end: D
   return result.rows.length > 0;
 }
 
-async function availableSlots(service: Service, possible: Professional[], dates: string[], now: Date, limit = Infinity) {
-  const today = limaDate(now);
-  const horizon = addDays(today, schedule.horizonDays);
-  const days = dates.filter((date) => date >= today && date <= horizon && schedule.workingDays.includes(atLima(date).getUTCDay()));
-  if (!days.length) return [];
-  const starts = atLima(days[0]);
-  const ends = atLima(addDays(days[days.length - 1], 1));
-  type Interval = { professionalId: string; startsAt: Date; endsAt: Date };
-  const { rows } = await (await getDb()).query<Interval>(`
-    SELECT professional_id AS "professionalId", starts_at AS "startsAt", occupied_until AS "endsAt"
+async function fetchBusyIntervals(possible: Professional[], dates: string[], now: Date) {
+  const days = dates.filter((date) => isWorkingBookableDate(date, now));
+  if (!days.length || !possible.length) return { days, intervals: [] as BusyInterval[] };
+  const sortedDays = [...days].sort();
+  const starts = atLima(sortedDays[0]);
+  const ends = atLima(addDays(sortedDays[sortedDays.length - 1], 1));
+  const { rows } = await (await getDb()).query<BusyInterval>(`
+    SELECT 'appointment' AS kind, professional_id AS "professionalId", starts_at AS "startsAt",
+           occupied_until AS "endsAt", NULL::text AS reason
       FROM appointments WHERE professional_id = ANY($1::text[]) AND starts_at < $3 AND occupied_until > $2
         AND ${activeCondition}
     UNION ALL
-    SELECT professional_id, starts_at, ends_at FROM agenda_blocks
-      WHERE professional_id = ANY($1::text[]) AND starts_at < $3 AND ends_at > $2
+    SELECT 'block' AS kind, professional_id AS "professionalId", starts_at AS "startsAt",
+           ends_at AS "endsAt", reason
+      FROM agenda_blocks WHERE professional_id = ANY($1::text[]) AND starts_at < $3 AND ends_at > $2
   `, [possible.map((professional) => professional.id), starts, ends, now]);
+  return { days, intervals: rows };
+}
+
+function extractSlotsFromIntervals(
+  service: Service,
+  possible: Professional[],
+  days: string[],
+  busyIntervals: BusyInterval[],
+  now: Date,
+  limit = Infinity,
+  stepMinutes = schedule.slotMinutes,
+) {
   const slots: Slot[] = [];
+  const times = dayTimes(stepMinutes);
   for (const date of days) {
-    for (let minute = schedule.openingHour * 60; minute < schedule.closingHour * 60; minute += schedule.slotMinutes) {
-      const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
+    for (const time of times) {
       const { start, occupied } = durationTimes(date, time, service);
       if (!withinHours(date, start, occupied, now)) continue;
-      const professional = possible.find(({ id }) => !rows.some((interval) => interval.professionalId === id
+      const professional = possible.find(({ id }) => !busyIntervals.some((interval) => interval.professionalId === id
         && start < interval.endsAt && occupied > interval.startsAt));
       if (professional) slots.push({ date, time, professionalId: professional.id, professionalName: professional.name });
       if (slots.length >= limit) return slots;
     }
   }
   return slots;
+}
+
+function isDayFullyBlocked(
+  date: string,
+  service: Service,
+  possible: Professional[],
+  busyIntervals: BusyInterval[],
+  now: Date,
+  stepMinutes: number,
+) {
+  if (!possible.length) return true;
+  const blocks = busyIntervals.filter((interval) => interval.kind === "block");
+  if (!blocks.length) return false;
+  const appointments = busyIntervals.filter((interval) => interval.kind === "appointment");
+
+  const today = limaDate(now);
+  const opening = atLima(date, openingTime);
+  const closing = atLima(date, closingTime);
+  const minAdvance = minAdvanceInstant(now);
+
+  const validDayTimings = dayTimes(stepMinutes)
+    .map((time) => durationTimes(date, time, service))
+    .filter(({ start, occupied }) => start >= opening && occupied <= closing);
+
+  if (!validDayTimings.length) return false;
+
+  const bookableTimings = date === today
+    ? validDayTimings.filter(({ start }) => start >= minAdvance)
+    : validDayTimings;
+
+  const targetTimings = bookableTimings.length > 0 ? bookableTimings : validDayTimings;
+
+  return possible.every((professional) =>
+    targetTimings.every(({ start, occupied }) =>
+      blocks.some((block) => block.professionalId === professional.id && start < block.endsAt && occupied > block.startsAt)
+      && !appointments.some((appt) => appt.professionalId === professional.id && appt.startsAt <= start && start < appt.endsAt),
+    ),
+  );
+}
+
+function buildDayIntervals(
+  date: string,
+  service: Service,
+  possible: Professional[],
+  busyIntervals: BusyInterval[],
+  now: Date,
+  stepMinutes: number,
+): DayInterval[] {
+  const today = limaDate(now);
+  const horizon = addDays(today, schedule.horizonDays);
+  const isWorking = schedule.workingDays.includes(atLima(date).getUTCDay());
+  const times = dayTimes(stepMinutes);
+
+  if (date < today) {
+    return times.map((time) => ({
+      time, available: false, status: "closed", reason: "Fecha pasada",
+      professionalId: null, professionalName: null,
+    }));
+  }
+  if (date > horizon) {
+    return times.map((time) => ({
+      time, available: false, status: "closed", reason: "Fuera del horizonte de reservas",
+      professionalId: null, professionalName: null,
+    }));
+  }
+  if (!isWorking) {
+    return times.map((time) => ({
+      time, available: false, status: "closed", reason: "Día no laborable",
+      professionalId: null, professionalName: null,
+    }));
+  }
+  if (!possible.length) {
+    return times.map((time) => ({
+      time, available: false, status: "closed", reason: "Sin profesionales disponibles",
+      professionalId: null, professionalName: null,
+    }));
+  }
+
+  const opening = atLima(date, openingTime);
+  const closing = atLima(date, closingTime);
+  const minAdvance = minAdvanceInstant(now);
+  const possibleIds = new Set(possible.map((professional) => professional.id));
+
+  return times.map((time) => {
+    const { start, occupied } = durationTimes(date, time, service);
+
+    if (date === today && start < minAdvance) {
+      return {
+        time,
+        available: false,
+        status: "cutoff",
+        reason: "Requiere 15 min de anticipación",
+        professionalId: null,
+        professionalName: null,
+      };
+    }
+
+    const freeProfessional = possible.find(({ id }) =>
+      !busyIntervals.some((interval) =>
+        interval.professionalId === id && start < interval.endsAt && occupied > interval.startsAt,
+      ),
+    );
+
+    if (!freeProfessional) {
+      const overlappingIntervals = busyIntervals
+        .filter((interval) =>
+          possibleIds.has(interval.professionalId) && start < interval.endsAt && occupied > interval.startsAt,
+        )
+        .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+      const coveringStart = overlappingIntervals.filter(
+        (interval) => interval.startsAt <= start && start < interval.endsAt,
+      );
+      const relevant = coveringStart.length > 0 ? coveringStart : overlappingIntervals;
+      const appointmentHit = relevant.find((interval) => interval.kind === "appointment");
+      const blockHit = relevant.find((interval) => interval.kind === "block");
+
+      if (appointmentHit) {
+        return {
+          time,
+          available: false,
+          status: "occupied",
+          reason: "Horario reservado",
+          professionalId: null,
+          professionalName: null,
+        };
+      }
+      if (blockHit) {
+        return {
+          time,
+          available: false,
+          status: "blocked",
+          reason: blockHit.reason?.trim() || "Cirugía / Horario bloqueado",
+          professionalId: null,
+          professionalName: null,
+        };
+      }
+    }
+
+    if (start < opening || occupied > closing) {
+      return {
+        time,
+        available: false,
+        status: "cutoff",
+        reason: "No alcanza la duración del servicio antes del cierre",
+        professionalId: null,
+        professionalName: null,
+      };
+    }
+
+    if (freeProfessional) {
+      return {
+        time,
+        available: true,
+        status: "available",
+        reason: null,
+        professionalId: freeProfessional.id,
+        professionalName: freeProfessional.name,
+      };
+    }
+
+    return {
+      time,
+      available: false,
+      status: "occupied",
+      reason: "Horario reservado",
+      professionalId: null,
+      professionalName: null,
+    };
+  });
+}
+
+async function availableSlots(
+  service: Service,
+  possible: Professional[],
+  dates: string[],
+  now: Date,
+  limit = Infinity,
+  stepMinutes = schedule.slotMinutes,
+) {
+  const { days, intervals } = await fetchBusyIntervals(possible, dates, now);
+  if (!days.length) return [];
+  return extractSlotsFromIntervals(service, possible, days, intervals, now, limit, stepMinutes);
 }
 
 export async function availability(search: URLSearchParams) {
@@ -239,18 +481,29 @@ export async function dailyReservasAvailability(search: URLSearchParams) {
   const rawDate = search.get("fecha") ?? search.get("date") ?? limaDate();
   const date = validatedDate(rawDate);
   const now = new Date();
+  const stepMinutes = schedule.displayStepMinutes;
 
-  const slots = await availableSlots(service, possible, [date], now);
-  const dayState = evaluateDayStatus(date, slots.length, now);
+  const { days, intervals: busyIntervals } = await fetchBusyIntervals(possible, [date], now);
+  const intervalos = buildDayIntervals(date, service, possible, busyIntervals, now, stepMinutes);
+  const slots: Slot[] = intervalos
+    .filter((item): item is DayInterval & { professionalId: string; professionalName: string } =>
+      item.available && item.professionalId !== null && item.professionalName !== null,
+    )
+    .map((item) => ({
+      date,
+      time: item.time,
+      professionalId: item.professionalId,
+      professionalName: item.professionalName,
+    }));
+  const allDoctorsBlocked = days.length > 0
+    ? isDayFullyBlocked(date, service, possible, busyIntervals, now, stepMinutes)
+    : false;
+  const dayState = evaluateDayStatus(date, slots.length, now, {
+    allDoctorsBlocked,
+    hasDoctors: possible.length > 0,
+  });
 
-  const allDayTimes: string[] = [];
-  for (let minute = schedule.openingHour * 60; minute < schedule.closingHour * 60; minute += schedule.slotMinutes) {
-    const time = String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
-    allDayTimes.push(time);
-  }
-
-  const availableSet = new Set(slots.map((s) => s.time));
-  const occupiedSlots = allDayTimes.filter((t) => !availableSet.has(t));
+  const occupiedSlots = intervalos.filter((item) => !item.available).map((item) => item.time);
 
   return {
     fecha: date,
@@ -266,6 +519,7 @@ export async function dailyReservasAvailability(search: URLSearchParams) {
     mensajeWalkIn: dayState.walkInMessage,
     horariosDisponibles: slots.map((s) => s.time),
     horariosOcupados: occupiedSlots,
+    intervalos,
     slots,
   };
 }
@@ -278,6 +532,7 @@ export async function monthlyReservasAvailability(search: URLSearchParams) {
   const now = new Date();
   const today = limaDate(now);
   const monthParam = search.get("mes") ?? search.get("month") ?? today.slice(0, 7);
+  const stepMinutes = schedule.displayStepMinutes;
 
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam)) {
     throw new HttpError(400, "El mes debe tener el formato YYYY-MM.");
@@ -288,7 +543,17 @@ export async function monthlyReservasAvailability(search: URLSearchParams) {
   const totalDays = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
   const monthDates = Array.from({ length: totalDays }, (_, idx) => `${monthParam}-${String(idx + 1).padStart(2, "0")}`);
 
-  const monthSlots = await availableSlots(service, possible, monthDates, now);
+  const { days: workingMonthDates, intervals: busyIntervals } = await fetchBusyIntervals(possible, monthDates, now);
+  const workingSet = new Set(workingMonthDates);
+  const monthSlots = extractSlotsFromIntervals(
+    service,
+    possible,
+    workingMonthDates,
+    busyIntervals,
+    now,
+    Infinity,
+    stepMinutes,
+  );
   const counts = new Map<string, number>();
   for (const slot of monthSlots) {
     counts.set(slot.date, (counts.get(slot.date) ?? 0) + 1);
@@ -301,7 +566,17 @@ export async function monthlyReservasAvailability(search: URLSearchParams) {
 
   for (const date of monthDates) {
     const count = counts.get(date) ?? 0;
-    const state = evaluateDayStatus(date, count, now);
+    let allDoctorsBlocked = false;
+    if (count === 0 && workingSet.has(date)) {
+      const dayStart = atLima(date);
+      const dayEnd = atLima(addDays(date, 1));
+      const dayBusy = busyIntervals.filter((interval) => interval.startsAt < dayEnd && interval.endsAt > dayStart);
+      allDoctorsBlocked = isDayFullyBlocked(date, service, possible, dayBusy, now, stepMinutes);
+    }
+    const state = evaluateDayStatus(date, count, now, {
+      allDoctorsBlocked,
+      hasDoctors: possible.length > 0,
+    });
     days[date] = {
       date,
       availableCount: count,
@@ -316,12 +591,27 @@ export async function monthlyReservasAvailability(search: URLSearchParams) {
 
   if (!nextAvailableDate) {
     const upcomingDates = Array.from({ length: 30 }, (_, offset) => addDays(today, offset));
-    const [nextSlot] = await availableSlots(service, possible, upcomingDates, now, 1);
+    const [nextSlot] = await availableSlots(service, possible, upcomingDates, now, 1, stepMinutes);
     nextAvailableDate = nextSlot?.date ?? null;
   }
 
-  const todayCount = counts.get(today) ?? 0;
-  const todayState = evaluateDayStatus(today, todayCount, now);
+  let todayState: ReturnType<typeof evaluateDayStatus>;
+  if (days[today]) {
+    todayState = evaluateDayStatus(today, days[today].availableCount, now, {
+      allDoctorsBlocked: days[today].status === "NO_DOCTORS",
+      hasDoctors: possible.length > 0,
+    });
+  } else {
+    const { days: todayWorking, intervals: todayBusy } = await fetchBusyIntervals(possible, [today], now);
+    const todaySlots = extractSlotsFromIntervals(service, possible, todayWorking, todayBusy, now, Infinity, stepMinutes);
+    const todayAllBlocked = todayWorking.length > 0
+      ? isDayFullyBlocked(today, service, possible, todayBusy, now, stepMinutes)
+      : false;
+    todayState = evaluateDayStatus(today, todaySlots.length, now, {
+      allDoctorsBlocked: todayAllBlocked,
+      hasDoctors: possible.length > 0,
+    });
+  }
 
   return {
     mes: monthParam,
@@ -620,13 +910,31 @@ async function createBlock(sql: Sql, input: Input, now: Date) {
 
 export async function changeAgenda(input: Input, user: User) {
   const action = field(input.action, "acción", 30);
-  if (user.role === "ODONTOLOGO" && action !== "status") {
+  if (user.role === "ODONTOLOGO" && !["status", "block", "unblock", "mark_reminder_30m"].includes(action)) {
     throw new HttpError(403, "Recepción o administración gestiona estos cambios de agenda.");
   }
   return writeSchedule(async (sql, now) => {
-    if (action === "block") return createBlock(sql, input, now);
+    if (action === "block") {
+      if (user.role === "ODONTOLOGO" && (!user.professionalId || input.professionalId !== user.professionalId)) {
+        throw new HttpError(403, "Solo puedes bloquear tu propia agenda.");
+      }
+      return createBlock(sql, input, now);
+    }
     if (action === "unblock") {
-      await sql.query("DELETE FROM agenda_blocks WHERE id=$1", [field(input.blockId, "bloqueo")]);
+      const blockId = field(input.blockId, "bloqueo");
+      if (user.role === "ODONTOLOGO") {
+        const { rows } = await sql.query<{ professionalId: string }>(
+          'SELECT professional_id AS "professionalId" FROM agenda_blocks WHERE id = $1',
+          [blockId],
+        );
+        if (!rows.length) {
+          throw new HttpError(404, "No encontramos el bloqueo.");
+        }
+        if (rows[0].professionalId !== user.professionalId) {
+          throw new HttpError(403, "El bloqueo pertenece a otro profesional.");
+        }
+      }
+      await sql.query("DELETE FROM agenda_blocks WHERE id=$1", [blockId]);
       return { ok: true };
     }
     if (action === "create") {
@@ -650,6 +958,16 @@ export async function changeAgenda(input: Input, user: User) {
     }
     if (action === "cancel") {
       return { appointment: asAppointment(await cancel(sql, current, user, optionalField(input.reason, "motivo", 240))) };
+    }
+    if (action === "mark_reminder_30m") {
+      await sql.query(
+        "UPDATE appointments SET reminder_30m_sent_at = COALESCE(reminder_30m_sent_at, $1) WHERE id = $2",
+        [now, current.id],
+      );
+      if (!current.reminder30mSentAt) {
+        await record(sql, current.id, user, "REMINDER_30M");
+      }
+      return { appointment: asAppointment(await getAppointment(sql, "a.id", current.id)) };
     }
     if (action !== "status") throw new HttpError(400, "Selecciona una acción válida.");
     const status = field(input.status, "estado", 30);

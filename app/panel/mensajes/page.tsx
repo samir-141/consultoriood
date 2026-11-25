@@ -71,9 +71,25 @@ export default function MessagesPage() {
   return (
     <section className="stack">
       <header className="page-intro">
-        <h1>Mensajes de citas</h1>
-        <p>Simulación de WhatsApp. Aquí puedes revisar las confirmaciones y los recordatorios de quienes aceptaron recibirlos.</p>
+        <h1>Mensajes de citas y recordatorios</h1>
+        <p>Gestión de confirmaciones previas (30 min antes) y cola de demostración de WhatsApp.</p>
       </header>
+
+      <article className="panel stack" aria-labelledby="future-bot-heading">
+        <div>
+          <h2 id="future-bot-heading">Tarea Futura: Bot de WhatsApp con API Local y Modelo de Comprensión</h2>
+          <p className="muted">
+            Actualmente recepción confirma manualmente 30 minutos antes de cada visita desde el{" "}
+            <Link href="/panel" className="underline font-semibold">Resumen del día</Link>.
+            Antes de activar envíos automáticos, la hoja de ruta contempla:
+          </p>
+        </div>
+        <ul className="list-disc pl-5 space-y-1 text-sm">
+          <li><strong>Clasificador de intención local (ONNX cuantizado):</strong> comprensión rápida en CPU (10–50 ms) sin costos por API ni envío de datos sensibles a terceros.</li>
+          <li><strong>Enrutador con reglas reales del consultorio:</strong> consulta disponibilidad en <code>/api/reservas</code> (intervalos 30m, servicios 45m = 2 bloques, regla de 15 min + consultas presenciales y bloqueos de cirugías/días libres).</li>
+          <li><strong>API local de WhatsApp:</strong> automatización de confirmaciones 30 min antes y respuestas 24/7 (ver <code>docs/TAREA_FUTURA_BOT_WHATSAPP.md</code>).</li>
+        </ul>
+      </article>
       {error && <p role="alert" className="error">{error}</p>}
       {message && <p role="status">{message}</p>}
       {!jobs && !error && <p>Cargando mensajes…</p>}
