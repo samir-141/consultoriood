@@ -24,6 +24,9 @@ export async function api(handler: () => Promise<Response>) {
     if (code === "23P01" || code === "23505") {
       return Response.json({ error: "La operación entra en conflicto con un registro existente." }, { status: 409, headers });
     }
+    if (code === "22007" || code === "22008" || code === "22P02" || code === "23502" || code === "23503" || code === "23514") {
+      return Response.json({ error: "Verifica el formato y las referencias de los datos enviados." }, { status: 400, headers });
+    }
     console.error("Fallo API 1.0.1", code ?? (error instanceof Error ? error.name : "UnknownError"));
     return Response.json({ error: "No pudimos completar la operación. Intenta otra vez." }, { status: 500, headers });
   }
@@ -90,12 +93,18 @@ export async function readJson(request: Request, maxBytes = 256 * 1024): Promise
 }
 
 export function field(value: unknown, label: string, max = 150): string {
-  if (typeof value !== "string" || value.includes("\0") || !value.trim() || value.trim().length > max) {
+  if (typeof value !== "string" || value.includes("\0") || value.length > max * 2
+      || !value.trim() || value.trim().length > max) {
     throw new HttpError(400, "Revisa el campo " + label + ".");
   }
   return value.trim();
 }
 
 export function optionalField(value: unknown, label: string, max = 150) {
-  return value === undefined || value === null || value === "" ? null : field(value, label, max);
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string" && !value.includes("\0") && !value.trim()) {
+    if (value.length > max * 2) throw new HttpError(400, "Revisa el campo " + label + ".");
+    return null;
+  }
+  return field(value, label, max);
 }

@@ -12,6 +12,7 @@ const everyone: Role[] = ["ADMIN", "RECEPCION", "ODONTOLOGO"];
 const destinations: { href: string; label: string; roles: Role[] }[] = [
   { href: "/panel", label: "Resumen", roles: everyone },
   { href: "/panel/agenda", label: "Agenda", roles: everyone },
+  { href: "/panel/citas", label: "Citas y doctores", roles: ["ADMIN", "RECEPCION"] },
   { href: "/panel/pacientes", label: "Pacientes", roles: everyone },
   { href: "/panel/clinica", label: "Clínica", roles: ["ADMIN", "ODONTOLOGO"] },
   { href: "/panel/pagos", label: "Pagos", roles: ["ADMIN", "RECEPCION"] },

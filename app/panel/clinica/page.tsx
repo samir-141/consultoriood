@@ -16,6 +16,7 @@ export default async function ClinicaPage({ searchParams }: ClinicaPageProps) {
 
   return (
     <ClinicaPanel
+      key={paciente ?? "none"}
       initialPatientId={paciente ?? ""}
       initialMode={modo === "view" ? "view" : "edit"}
       initialStep={paso ?? "anamnesis"}

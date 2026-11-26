@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { professionals } from "@/config/site";
 import { lookupDniReniec } from "@/app/components/reniec-lookup";
 import { errorMessage, postJson, staffFetch, todayLima, useStaff, type Patient } from "../agenda/staff";
 import styles from "../agenda/staff.module.css";
@@ -23,15 +24,18 @@ function PatientDirectory() {
   const linkedId = params.get("paciente") ?? "";
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
+  const [ignoreLinked, setIgnoreLinked] = useState(false);
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<Result>();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<{ patient?: Patient } | null>(null);
   const [notice, setNotice] = useState("");
+  const [assignBusy, setAssignBusy] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const detailHeading = useRef<HTMLHeadingElement>(null);
   const mayEdit = staff.role !== "ODONTOLOGO";
-  const query = new URLSearchParams({ q: selectedId === null && linkedId ? linkedId : search });
+  const effectiveLinked = !ignoreLinked && !search && selectedId === null ? linkedId : "";
+  const query = new URLSearchParams({ q: effectiveLinked || search });
   const requestKey = query.toString() + "#" + revision;
   const current = result?.key === requestKey ? result : undefined;
   const patients = current?.patients ?? [];
@@ -118,11 +122,12 @@ function PatientDirectory() {
             />
           </label>
           <button className={styles.secondary} type="submit">Buscar</button>
-          {search && (
+          {(search || effectiveLinked) && (
             <button
               className={styles.secondary}
               type="button"
               onClick={() => {
+                setIgnoreLinked(true);
                 setText(""); setSearch(""); setSelectedId(null); setEditor(null); setNotice("");
               }}
             >
@@ -198,7 +203,51 @@ function PatientDirectory() {
                   <div><dt>Teléfono</dt><dd>{patient.phone || "Sin registrar"}</dd></div>
                   <div><dt>Correo</dt><dd>{patient.email || "Sin registrar"}</dd></div>
                   <div><dt>Fecha de nacimiento</dt><dd>{patient.birthDate?.slice(0, 10) || "Sin registrar"}</dd></div>
+                  <div>
+                    <dt>Odontólogos asignados</dt>
+                    <dd>
+                      {patient.assignedProfessionalIds?.length
+                        ? patient.assignedProfessionalIds
+                          .map((pid) => professionals.find((pr) => pr.id === pid)?.name ?? pid)
+                          .join(", ")
+                        : "Sin asignación clínica"}
+                    </dd>
+                  </div>
                 </dl>
+                {mayEdit && (
+                  <div className={styles.actions}>
+                    {professionals.map((prof) => {
+                      const assigned = patient.assignedProfessionalIds?.includes(prof.id) ?? false;
+                      return (
+                        <button
+                          key={prof.id}
+                          type="button"
+                          className={styles.miniBtn}
+                          disabled={assignBusy}
+                          onClick={async () => {
+                            setAssignBusy(true);
+                            setNotice("");
+                            try {
+                              await postJson("/api/panel/asignaciones", {
+                                action: assigned ? "unassign" : "assign",
+                                patientId: patient.id,
+                                professionalId: prof.id,
+                              });
+                              setNotice(assigned ? `Se retiró el vínculo con ${prof.name}.` : `Paciente asignado a ${prof.name}.`);
+                              setRevision((v) => v + 1);
+                            } catch (problem) {
+                              setNotice(errorMessage(problem));
+                            } finally {
+                              setAssignBusy(false);
+                            }
+                          }}
+                        >
+                          {assigned ? `Quitar cargo (${prof.name})` : `Asignar a ${prof.name}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className={styles.actions}>
                   {mayEdit && (
                     <button

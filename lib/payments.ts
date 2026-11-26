@@ -102,15 +102,15 @@ async function registerPayment(
   if (appointmentId) {
     const { rows } = await tx.query(`
       SELECT 1 FROM appointments WHERE id = $1 AND patient_id = $2
-      AND status NOT IN ('PENDING', 'EXPIRED') FOR SHARE
+      AND status NOT IN ('PENDING', 'EXPIRED', 'CANCELLED', 'RESCHEDULED', 'NO_SHOW') FOR SHARE
     `, [appointmentId, patientId]);
-    if (!rows.length) throw new HttpError(400, "Selecciona una cita válida del paciente.");
+    if (!rows.length) throw new HttpError(400, "Selecciona una cita activa del paciente.");
   }
   if (planId) {
     const { rows } = await tx.query(`
-      SELECT 1 FROM treatment_plans WHERE id = $1 AND patient_id = $2 AND status <> 'DRAFT' FOR SHARE
+      SELECT 1 FROM treatment_plans WHERE id = $1 AND patient_id = $2 AND status NOT IN ('DRAFT', 'CANCELLED') FOR SHARE
     `, [planId, patientId]);
-    if (!rows.length) throw new HttpError(400, "Selecciona un plan válido del paciente.");
+    if (!rows.length) throw new HttpError(400, "Selecciona un plan vigente del paciente.");
   }
 
   const id = randomUUID();
@@ -139,7 +139,7 @@ async function registerPayment(
       || payment.proofName !== (proof?.name ?? null)) {
     throw new HttpError(409, "La referencia ya está registrada con datos distintos.");
   }
-  return privateJson({ payment: { ...payment, status: "PENDING", reason: "" } });
+  return privateJson({ payment });
 }
 
 async function checkPaymentLimit(tx: Transaction, payment: Payment) {

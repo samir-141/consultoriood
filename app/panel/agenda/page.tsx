@@ -86,15 +86,18 @@ export default function AgendaPage() {
     heading.current?.focus();
   }
 
+  const [inlineError, setInlineError] = useState("");
+
   async function quickStatus(appointmentId: string, status: Status, msg: string) {
     setInlineBusyId(appointmentId);
     setNotice("");
+    setInlineError("");
     try {
       await postJson("/api/panel/agenda", { action: "status", appointmentId, status });
       setNotice(msg);
       setRevision((value) => value + 1);
     } catch (problem) {
-      setNotice(errorMessage(problem));
+      setInlineError(errorMessage(problem));
     } finally {
       setInlineBusyId(null);
     }
@@ -215,6 +218,7 @@ export default function AgendaPage() {
         </div>
 
         {notice && <p className={styles.notice} role="status">{notice}</p>}
+        {inlineError && <p className={styles.error} role="alert">{inlineError}</p>}
         {catalogError && <p className={styles.error} role="alert">{catalogError}</p>}
         {calendar?.error && (
           <div className={styles.stack}>
@@ -466,8 +470,16 @@ function AgendaDetail({ selection, mayManage, staffProfessionalId, catalog, date
             </div>
           </dl>
           <div className={styles.actions}>
-            <Link className={styles.shortcutLink} href={`/panel/pacientes?paciente=${encodeURIComponent(appointment.patientId)}`}>Datos del paciente</Link>
-            {!mayManage && <Link className={styles.shortcutLink} href={`/panel/clinica?paciente=${encodeURIComponent(appointment.patientId)}`}>Ficha clínica</Link>}
+            {(mayManage || appointment.patientAssigned !== false) && (
+              <Link className={styles.shortcutLink} href={`/panel/pacientes?paciente=${encodeURIComponent(appointment.patientId)}`}>
+                Datos del paciente
+              </Link>
+            )}
+            {!mayManage && appointment.patientAssigned !== false && !["PENDING", "EXPIRED"].includes(appointment.status) && (
+              <Link className={styles.shortcutLink} href={`/panel/clinica?paciente=${encodeURIComponent(appointment.patientId)}`}>
+                Ficha clínica
+              </Link>
+            )}
             {mayManage && appointment.status === "CONFIRMED" && !appointment.reminder30mSentAt && (
               <button
                 type="button"
@@ -732,7 +744,7 @@ function AppointmentForm({ catalog, date, professional, defaultTime, appointment
 
 function addHour(time: string) {
   const [h, m] = time.split(":").map(Number);
-  return `${String(Math.min(17, h + 1)).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+  return `${String(Math.min(20, h + 1)).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
 }
 
 function BlockForm({ catalog, date, professional, defaultStart, lockProfessional = false, onSaved }: {

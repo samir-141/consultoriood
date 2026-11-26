@@ -117,4 +117,14 @@ export const clinicalSchema = `
     FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
   CREATE OR REPLACE TRIGGER clinical_history_revisions_append_only BEFORE UPDATE OR DELETE ON clinical_history_revisions
     FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
+
+  CREATE INDEX IF NOT EXISTS clinical_notes_appt_idx ON clinical_notes (appointment_id);
+  CREATE INDEX IF NOT EXISTS clinical_notes_author_idx ON clinical_notes (author_id);
+  CREATE INDEX IF NOT EXISTS clinical_odontogram_author_idx ON clinical_odontogram (author_id);
+  CREATE INDEX IF NOT EXISTS treatment_plans_author_idx ON treatment_plans (author_id);
+  CREATE INDEX IF NOT EXISTS clinical_consents_author_idx ON clinical_consents (author_id);
+  CREATE INDEX IF NOT EXISTS clinical_attachments_author_idx ON clinical_attachments (author_id);
+  CREATE INDEX IF NOT EXISTS clinical_audit_actor_idx ON clinical_audit (actor_id);
+  CREATE INDEX IF NOT EXISTS clinical_histories_updated_by_idx ON clinical_histories (updated_by);
+  CREATE INDEX IF NOT EXISTS clinical_history_revisions_author_idx ON clinical_history_revisions (author_id);
 `;

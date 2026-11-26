@@ -8,7 +8,10 @@ export type Staff = { id: string; name: string; role: Role; professionalId?: str
 export type Professional = { id: string; name: string; title: string; serviceIds: string[] };
 export type Service = { id: string; name: string; description: string; duration: number; priceCents: number };
 export type Catalog = { services: Service[]; professionals: Professional[] };
-export type Patient = { id: string; name: string; phone: string; email?: string | null; dni?: string | null; birthDate?: string | null };
+export type Patient = {
+  id: string; name: string; phone: string; email?: string | null; dni?: string | null; birthDate?: string | null;
+  assignedProfessionalIds?: string[];
+};
 export type Status = "PENDING" | "CONFIRMED" | "CANCELLED" | "EXPIRED" | "RESCHEDULED"
   | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "NO_SHOW";
 export type Appointment = {
@@ -16,6 +19,7 @@ export type Appointment = {
   serviceName: string; professionalId: string; professionalName: string; patientId: string;
   patientName: string; patientPhone?: string | null; status: Status; priceCents: number;
   reminder30mSentAt?: string | null;
+  patientAssigned?: boolean;
 };
 export type Block = {
   id: string; date: string; time: string; endTime: string;

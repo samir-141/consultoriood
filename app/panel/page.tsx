@@ -276,7 +276,7 @@ export default function StaffDashboard() {
                           En sede
                         </button>
                       )}
-                      {staff.role !== "RECEPCION" && (
+                      {staff.role !== "RECEPCION" && (staff.role === "ADMIN" || appointment.patientAssigned !== false) && (
                         <Link className={styles.miniBtn} href={`/panel/clinica?paciente=${encodeURIComponent(appointment.patientId)}`}>
                           Ficha
                         </Link>
@@ -344,18 +344,28 @@ export default function StaffDashboard() {
                   <span className={styles.orderBadge}>{appt.time}</span>
                   <div className={styles.eventTitle}>
                     <strong>{appt.patientName}</strong>
-                    <small>{appt.serviceName}{appt.patientPhone ? ` · ${appt.patientPhone}` : ""}</small>
+                    <small>
+                      {appt.serviceName} · {appt.professionalName}
+                      {appt.patientPhone ? ` · ${appt.patientPhone}` : ""}
+                    </small>
                   </div>
                   <div className={styles.actions}>
                     <span className={styles.pill} data-status={appt.status}>{statusLabels[appt.status]}</span>
-                    <Link
-                      className={styles.miniBtn}
-                      href={staff.role !== "RECEPCION"
-                        ? `/panel/clinica?paciente=${encodeURIComponent(appt.patientId)}`
-                        : `/panel/pacientes?paciente=${encodeURIComponent(appt.patientId)}`}
-                    >
-                      Abrir
-                    </Link>
+                    {(staff.role === "ADMIN" || (staff.role === "ODONTOLOGO" && appt.patientAssigned !== false)) ? (
+                      <Link
+                        className={styles.miniBtn}
+                        href={`/panel/clinica?paciente=${encodeURIComponent(appt.patientId)}`}
+                      >
+                        Abrir
+                      </Link>
+                    ) : (
+                      <Link
+                        className={styles.miniBtn}
+                        href={`/panel/pacientes?paciente=${encodeURIComponent(appt.patientId)}`}
+                      >
+                        Ver
+                      </Link>
+                    )}
                   </div>
                 </li>
               ))}
@@ -438,6 +448,13 @@ export default function StaffDashboard() {
           </section>
         ) : null}
 
+        {staff.role !== "ODONTOLOGO" && (
+          <section className={`${styles.card} ${styles.stack}`}>
+            <h2>Citas y doctores</h2>
+            <p className={styles.muted}>Tabla unificada de citas, pacientes y odontólogos asignados.</p>
+            <Link className={styles.shortcutLink} href="/panel/citas">Abrir tabla de citas</Link>
+          </section>
+        )}
         {staff.role !== "ODONTOLOGO" && (
           <section className={`${styles.card} ${styles.stack}`}>
             <h2>Pagos</h2>

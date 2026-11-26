@@ -15,7 +15,8 @@ function checkedFile(name: unknown, mime: unknown, content: Uint8Array): Private
   if (typeof mime !== "string" || !Object.hasOwn(formats, mime)) {
     throw new HttpError(415, "Elige un archivo PDF, PNG o JPG.");
   }
-  if (!content.length || content.length > fileLimit) throw new HttpError(413, "El archivo debe pesar hasta 10 MB.");
+  if (!content.length) throw new HttpError(400, "El archivo está vacío.");
+  if (content.length > fileLimit) throw new HttpError(413, "El archivo debe pesar hasta 10 MB.");
   if (!formats[mime].every((byte, index) => content[index] === byte)) {
     throw new HttpError(415, "El contenido no coincide con el formato del archivo.");
   }
@@ -24,7 +25,7 @@ function checkedFile(name: unknown, mime: unknown, content: Uint8Array): Private
 
 export async function readClinicalUpload(request: Request) {
   const type = request.headers.get("content-type");
-  if (!type?.startsWith("multipart/form-data;")) throw new HttpError(400, "Selecciona un archivo.");
+  if (!type?.toLowerCase().startsWith("multipart/form-data;")) throw new HttpError(400, "Selecciona un archivo.");
   const body = await readBoundedBody(request, fileLimit + 64 * 1024);
   const parsed = await new Response(body, { headers: { "Content-Type": type } }).formData()
     .catch(() => { throw new HttpError(400, "No se pudo leer el archivo enviado."); });

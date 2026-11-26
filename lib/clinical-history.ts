@@ -1,4 +1,5 @@
 import { HttpError } from "@/lib/http";
+import { validDate } from "@/lib/clinic-time";
 import { optionalText } from "@/lib/clinical-validation";
 
 export type ToothSurface = "O" | "M" | "D" | "V" | "L";
@@ -255,8 +256,8 @@ const VALID_COLORS = new Set<ToothConditionColor>(["red", "blue", "neutral"]);
 function cleanDate(value: unknown, label: string): string {
   const text = optionalText(value, label, 20);
   if (!text) return "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    throw new HttpError(400, `Revisa ${label}. Usa formato AAAA-MM-DD.`);
+  if (!validDate(text)) {
+    throw new HttpError(400, `Revisa ${label}. Usa formato AAAA-MM-DD válido.`);
   }
   return text;
 }
