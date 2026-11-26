@@ -67,7 +67,7 @@ export function LocationMap({
           rel="noopener noreferrer"
           className={styles.mapDirectLink}
         >
-          <span>Abrir en Google Maps →</span>
+          <span>Abrir ubicación en Google Maps →</span>
         </a>
       )}
     </div>
