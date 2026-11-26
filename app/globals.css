@@ -2,46 +2,58 @@
 
 @theme {
   --font-sans:
-    var(--font-inter, ui-sans-serif), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    var(--font-montserrat, ui-sans-serif), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
+  --font-serif:
+    var(--font-merriweather, ui-serif), Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 :root {
   interpolate-size: allow-keywords;
-  /* Design Tokens: Medical Blue Palette (Accesible AA / AAA) */
-  --blue-deep: #0a2540;        /* Azul profundo para títulos y fondos acento */
-  --blue-dark: #0f3d6b;        /* Azul oscuro secundario */
-  --blue-primary: #0066b2;     /* Azul medio para botones primarios y enlaces (contraste 5.2:1 con blanco) */
-  --blue-hover: #004c85;       /* Hover de botones y enlaces */
-  --blue-active: #003b66;      /* Estado activo/focus */
-  --blue-cyan: #0284c7;        /* Acento complementario */
-  --blue-soft: #f0f7ff;        /* Celeste/azul muy claro para fondos de tarjetas y bloques */
-  --blue-soft-border: #bfdbfe; /* Bordes suaves */
-  --blue-tint: #e6f2fd;        /* Acento ligero para tags e insignias */
-  --blue-ring: #0284c7;        /* Anillo de accesibilidad para focus-visible */
 
-  --ink: #0f172a;              /* Texto principal (slate-900) */
-  --muted: #475569;            /* Texto secundario (slate-600, contraste > 4.5:1) */
-  --paper: #ffffff;            /* Fondo blanco base */
-  --canvas: #f8fafc;           /* Fondo grisáceo azulado de página */
-  --line: #e2e8f0;             /* Líneas y divisores */
-  --control-line: #cbd5e1;     /* Bordes de inputs */
-  --danger: #b91c1c;           /* Errores accesibles */
-  --danger-soft: #fef2f2;
-  --success: #15803d;          /* Éxito accesible */
-  --success-soft: #f0fdf4;
+  /* Paleta Oficial Gómez Delgado Clínica Dental */
+  --plum-deep: #3B1143;        /* Morado Profundo: encabezados, barra de confianza, footer */
+  --plum-primary: #7B247F;     /* Morado Principal: botones, bordes activos, íconos, estrellas */
+  --plum-hover: #5E1A62;       /* Hover accesible para botones principales */
+  --plum-active: #4A134E;      /* Estado activo / focus */
+  --lilac-wave: #B983BE;       /* Lila Claro: ondas, bordes y acentos decorativos (nunca texto pequeño sobre blanco) */
+  --lilac-tint: #F8F4F9;       /* Lila Tintado: fondos de secciones alternas, badges y círculos de íconos */
+  --lilac-border: #E2CCE5;     /* Borde sutil en gama lila */
 
-  /* Aliases para compatibilidad */
+  --ink: #2D2D2D;              /* Texto principal de lectura */
+  --muted: #554A59;            /* Texto secundario accesible (contraste >= 7:1 sobre blanco y #F8F4F9) */
+  --paper: #FFFFFF;            /* Fondo blanco base */
+  --canvas: #FFFFFF;           /* Lienzo principal blanco */
+  --line: #E8DDE9;             /* Líneas y divisores */
+  --control-line: #D4C2D7;     /* Bordes de inputs */
+  --danger: #B91C1C;           /* Errores accesibles */
+  --danger-soft: #FEF2F2;
+  --success: #15803D;          /* Éxito accesible */
+  --success-soft: #F0FDF4;
+
+  /* Aliases de compatibilidad para rutas internas (/reservar, /panel, tests) */
+  --blue-deep: var(--plum-deep);
+  --blue-dark: #4F1859;
+  --blue-primary: var(--plum-primary);
+  --blue-hover: var(--plum-hover);
+  --blue-active: var(--plum-active);
+  --blue-cyan: var(--lilac-wave);
+  --blue-soft: var(--lilac-tint);
+  --blue-soft-border: var(--lilac-border);
+  --blue-tint: #EFE4F2;
+  --blue-ring: var(--plum-primary);
+
   --brand-ink: var(--ink);
-  --brand-primary: var(--blue-primary);
-  --brand-hover: var(--blue-hover);
-  --brand-soft: var(--blue-soft);
-  --green: var(--blue-primary);
-  --mint: var(--blue-soft);
-  --ring: var(--blue-ring);
-  --action: var(--blue-primary);
-  --soft: var(--blue-soft);
+  --brand-primary: var(--plum-primary);
+  --brand-hover: var(--plum-hover);
+  --brand-soft: var(--lilac-tint);
+  --green: var(--plum-primary);
+  --mint: var(--lilac-tint);
+  --ring: var(--plum-primary);
+  --action: var(--plum-primary);
+  --soft: var(--lilac-tint);
 
+  --header-height: 4.5rem;
   color-scheme: light;
 }
 
@@ -49,9 +61,20 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-padding-top: var(--header-height);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 html, body {
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -61,21 +84,22 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 1rem;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4 {
-  color: var(--blue-deep);
+  color: var(--plum-deep);
+  font-family: var(--font-serif);
   font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
-h1 { font-size: clamp(2rem, 5vw, 3.25rem); }
-h2 { font-size: clamp(1.4rem, 3.5vw, 2.1rem); }
-h3 { font-size: clamp(1.15rem, 2.2vw, 1.35rem); }
+h1 { font-size: clamp(2.1rem, 4.5vw, 3.25rem); }
+h2 { font-size: clamp(1.55rem, 3.2vw, 2.25rem); }
+h3 { font-size: clamp(1.15rem, 2.1vw, 1.35rem); }
 
 a:focus-visible,
 button:focus-visible,
@@ -108,7 +132,7 @@ input:not([type="checkbox"], [type="radio"]),
 select,
 textarea {
   max-width: 100%;
-  min-height: 2.75rem; /* Min touch target 44px */
+  min-height: 2.75rem;
   border: 1px solid var(--control-line);
   border-radius: 0.6rem;
   padding: 0.6rem 0.85rem;
@@ -121,13 +145,13 @@ textarea {
 input:not([type="checkbox"], [type="radio"]):focus,
 select:focus,
 textarea:focus {
-  border-color: var(--blue-primary);
-  box-shadow: 0 0 0 3px rgba(0, 102, 178, 0.15);
+  border-color: var(--plum-primary);
+  box-shadow: 0 0 0 3px rgba(123, 36, 127, 0.16);
 }
 
 input:is([type="checkbox"], [type="radio"]),
 progress {
-  accent-color: var(--blue-primary);
+  accent-color: var(--plum-primary);
 }
 
 textarea {
@@ -142,7 +166,7 @@ summary {
 }
 
 .shell {
-  width: min(100% - 1.75rem, 84rem);
+  width: min(100% - 1.75rem, 80rem);
   margin-inline: auto;
 }
 
@@ -151,36 +175,55 @@ summary {
   align-items: center;
   width: fit-content;
   min-width: 0;
-  gap: clamp(0.45rem, 1.5vw, 0.75rem);
+  gap: clamp(0.35rem, 1.2vw, 0.7rem);
   min-height: 2.75rem;
   text-decoration: none;
-  color: var(--blue-deep);
+  color: var(--plum-deep);
 }
 
 .clinic-brand img {
-  width: clamp(2rem, 6vw, 2.75rem);
-  height: clamp(2rem, 6vw, 2.75rem);
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
+}
+
+@media (min-width: 480px) {
+  .clinic-brand img {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (min-width: 768px) {
+  .clinic-brand img {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 .clinic-brand-copy {
   display: grid;
-  gap: 0.08rem;
-  line-height: 1.12;
+  gap: 0.05rem;
+  line-height: 1.05;
   min-width: 0;
 }
 
 .clinic-brand-copy strong {
-  font-size: clamp(0.82rem, 3.1vw, 1.1rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--blue-deep);
+  font-family: var(--font-serif);
+  font-size: clamp(0.74rem, 2.5vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--plum-deep);
 }
 
 .clinic-brand-copy > span {
-  font-size: clamp(0.7rem, 2.2vw, 0.78rem);
+  font-family: var(--font-sans);
+  font-size: clamp(0.56rem, 1.8vw, 0.72rem);
   font-weight: 600;
-  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--plum-primary);
 }
 
 .panel {
@@ -189,7 +232,7 @@ summary {
   border-radius: 1.1rem;
   padding: clamp(1rem, 3vw, 1.65rem);
   background: var(--paper);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(59, 17, 67, 0.05);
 }
 
 .stack > * + * {
@@ -209,42 +252,52 @@ summary {
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
-  min-height: 2.75rem; /* Min 44px */
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid transparent;
-  border-radius: 0.65rem;
-  font-weight: 650;
-  font-size: 0.98rem;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.96rem;
   line-height: 1.25;
   text-align: center;
   text-decoration: none;
-  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .button {
-  background: var(--blue-primary);
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 102, 178, 0.2);
+  background: var(--plum-primary);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px -4px rgba(123, 36, 127, 0.35);
 }
 
 .button:hover:not(:disabled) {
-  background: var(--blue-hover);
-  color: #ffffff;
+  background: var(--plum-hover);
+  color: #FFFFFF;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 102, 178, 0.25);
+  box-shadow: 0 8px 20px -4px rgba(94, 26, 98, 0.4);
 }
 
 .button-secondary {
-  border-color: var(--blue-soft-border);
-  background: var(--blue-soft);
-  color: var(--blue-deep);
+  border-color: var(--plum-primary);
+  background: transparent;
+  color: var(--plum-primary);
 }
 
 .button-secondary:hover:not(:disabled) {
-  background: var(--blue-tint);
-  border-color: var(--blue-primary);
+  background: var(--lilac-tint);
+  color: var(--plum-deep);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
 }
 
 .muted {
@@ -262,4 +315,10 @@ summary {
 .page-intro p {
   margin-top: 0.6rem;
   color: var(--muted);
+}
+
+@media (forced-colors: active) {
+  .button, .button-secondary {
+    border: 2px solid ButtonText;
+  }
 }

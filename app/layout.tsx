@@ -1,18 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Merriweather, Montserrat } from "next/font/google";
 import { clinic } from "@/config/site";
 import "./globals.css";
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-montserrat",
+});
+
+const merriweather = Merriweather({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  display: "swap",
+  variable: "--font-merriweather",
 });
 
 export const metadata: Metadata = {
   title: { default: `${clinic.name} · ${clinic.descriptor}`, template: `%s · ${clinic.name}` },
-  description: `${clinic.name} - ${clinic.valueProposition}`,
+  description: `${clinic.name} ${clinic.descriptor} - ${clinic.valueProposition}`,
   icons: { icon: { url: "/identidad/marca.svg", type: "image/svg+xml", sizes: "any" } },
   robots: {
     index: false,
@@ -23,7 +31,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a2540",
+  themeColor: "#3B1143",
 };
 
 type RootLayoutProps = Readonly<{
@@ -32,8 +40,8 @@ type RootLayoutProps = Readonly<{
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="es-PE" className={inter.variable}>
-      <body className={inter.className}>
+    <html lang="es-PE" data-scroll-behavior="smooth" className={`${montserrat.variable} ${merriweather.variable}`}>
+      <body className={montserrat.className}>
         {children}
       </body>
     </html>
