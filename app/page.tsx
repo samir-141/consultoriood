@@ -279,7 +279,18 @@ export default function HomePage() {
                     </span>
                     <div>
                       <span className={styles.contactDetailLabel}>Dirección</span>
-                      <span className={styles.contactDetailValue}>{clinic.address}</span>
+                      {clinic.mapUrl ? (
+                        <a
+                          href={clinic.mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.contactDetailValue}
+                        >
+                          {clinic.address}
+                        </a>
+                      ) : (
+                        <span className={styles.contactDetailValue}>{clinic.address}</span>
+                      )}
                     </div>
                   </li>
 
