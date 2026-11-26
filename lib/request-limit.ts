@@ -1,6 +1,6 @@
 import { HttpError } from "./http";
 
-const maxPerMinute = { login: 24, booking: 60 };
+const maxPerMinute = { login: 24, booking: 60, reniec: 40 };
 type Scope = keyof typeof maxPerMinute;
 type Window = { expires: number; count: number };
 const state = globalThis as typeof globalThis & { dentalRequestWindows?: Partial<Record<Scope, Window>> };

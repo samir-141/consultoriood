@@ -127,4 +127,54 @@ test.describe("Agente de Funcionalidad - Flujo Completo y Reglas de Negocio", ()
     await page.goto("/panel/agenda");
     await expect(page.getByRole("button", { name: /cirugía \/ día libre/i })).toBeVisible();
   });
+
+  test("Historia Clínica: Modo 1 Llenado y Modo 2 Visualización con persistencia y odontograma", async ({ page }) => {
+    await page.goto("/ingresar");
+    await page.getByLabel("Correo").fill("odontologia@demo.test");
+    await page.getByLabel("Contraseña").fill("DemoDental!101");
+    await page.getByRole("button", { name: /ingresar al panel/i }).click();
+    await page.waitForURL("**/panel");
+
+    await page.goto("/panel/clinica?paciente=paciente-demo-1");
+    await expect(page.getByRole("tab", { name: /1\. Llenado de Historia/i })).toBeVisible({ timeout: 10000 });
+
+    // Modo 1: Llenar Anamnesis
+    await page.getByLabel("N° Historia Clínica").fill("HC-2026-01");
+    await page.getByLabel("Motivo de consulta").fill("Dolor en molar superior derecho al masticar");
+    await page.locator("input[name='drugAllergy']").nth(1).check();
+    await page.getByPlaceholder("Especificar medicamento o reacción (si aplica)").fill("Penicilina");
+
+    // Ir a Paso 2: Examen y Signos Vitales
+    await page.getByRole("tab", { name: /2\. Examen y Dx/i }).click();
+    await page.getByLabel("P.A.").fill("118/78 mmHg");
+    await page.getByLabel("IV. Diagnóstico Definitivo").fill("Pulpitis reversible en pieza 16");
+
+    // Ir a Paso 3: Odontograma y marcar pieza 16
+    await page.getByRole("tab", { name: /3\. Odontograma/i }).click();
+    await page.getByRole("button", { name: /Pieza 16/i }).click();
+    await page.getByLabel("Nota rápida de pieza").fill("Caries oclusal");
+
+    // Captura de Modo 1 (Odontograma / Llenado)
+    await page.screenshot({ path: "reports/screenshots/clinica-modo-llenado.png", fullPage: false });
+
+    // Guardar historia clínica
+    await page.getByRole("button", { name: /guardar historia clínica/i }).first().click();
+    await expect(page.getByText("Historia clínica guardada correctamente.")).toBeVisible({ timeout: 10000 });
+
+    // Cambiar a Modo 2: Visualizar Datos y verificar todo
+    await page.getByRole("tab", { name: /2\. Visualizar Datos/i }).click();
+    await expect(page.getByText(/Alergia a medicamentos reportada/i)).toBeVisible();
+    await expect(page.getByText("Penicilina").first()).toBeVisible();
+    await expect(page.getByText("118/78 mmHg")).toBeVisible();
+    await expect(page.getByText("Pulpitis reversible en pieza 16")).toBeVisible();
+
+    // Captura de Modo 2 (Visualización)
+    await page.screenshot({ path: "reports/screenshots/clinica-modo-visualizar.png", fullPage: false });
+
+    // Recargar y confirmar persistencia desde base de datos
+    await page.reload();
+    await page.getByRole("tab", { name: /2\. Visualizar Datos/i }).click({ timeout: 10000 });
+    await expect(page.getByText("Dolor en molar superior derecho al masticar")).toBeVisible();
+    await expect(page.getByText("HC-2026-01").first()).toBeVisible();
+  });
 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ClinicBrand } from "@/app/components/clinic-brand";
+import { professionals } from "@/config/site";
 import { errorMessage, roleLabels, StaffContext, staffFetch, type Role, type Staff } from "./agenda/staff";
 import styles from "./agenda/staff.module.css";
 
@@ -94,7 +95,18 @@ export default function StaffLayout({ children }: { children: ReactNode }) {
             <div className={styles.barRow}>
               <ClinicBrand href="/panel" />
               <div className={styles.account}>
-                <span>{roleLabels[staff.role]}</span>
+                <div className={styles.accountMeta}>
+                  <strong>{staff.name}</strong>
+                  <span>
+                    {roleLabels[staff.role]}
+                    {staff.professionalId
+                      ? (() => {
+                        const prof = professionals.find((p) => p.id === staff.professionalId);
+                        return prof?.title ? ` · ${prof.title}` : "";
+                      })()
+                      : ""}
+                  </span>
+                </div>
                 <button className={styles.secondary} type="button" disabled={signingOut} onClick={signOut}>
                   {signingOut ? "Cerrando…" : "Cerrar sesión"}
                 </button>

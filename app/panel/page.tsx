@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { professionals } from "@/config/site";
 import { atLima } from "@/lib/clinic-time";
 import {
   dateLabel,
@@ -14,6 +15,8 @@ import {
   useStaff,
   type Agenda,
   type Appointment,
+  type Patient,
+  type Status,
 } from "./agenda/staff";
 import styles from "./agenda/staff.module.css";
 
@@ -23,8 +26,13 @@ function whatsappConfirmHref(appointment: Appointment) {
   const digits = (appointment.patientPhone ?? "").replace(/\D/g, "");
   if (!digits) return null;
   const intl = digits.length === 9 && digits.startsWith("9") ? `51${digits}` : digits;
-  const msg = `Hola ${appointment.patientName}, te escribimos de GOMEZ DELGADO DENTAL para confirmar tu visita de hoy a las ${appointment.time} (${appointment.serviceName}). Por favor confírmanos si asistirás.`;
+  const msg = `Hola ${appointment.patientName}, te escribimos de Gómez Delgado Clínica Dental para recordar tu cita de hoy a las ${appointment.time} (${appointment.serviceName}). ¿Nos confirmas si podrás asistir?`;
   return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+}
+
+function telHref(phone?: string | null) {
+  const digits = (phone ?? "").replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : null;
 }
 
 function minus30Label(time: string) {
@@ -33,15 +41,30 @@ function minus30Label(time: string) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+const quickStatusOptions: { value: "ALL" | Status; label: string }[] = [
+  { value: "ALL", label: "Todos" },
+  { value: "CONFIRMED", label: "Programado / Confirmado" },
+  { value: "CHECKED_IN", label: "En sala / sede" },
+  { value: "IN_PROGRESS", label: "En atención" },
+  { value: "COMPLETED", label: "Completado" },
+  { value: "PENDING", label: "Retenido" },
+];
+
 export default function StaffDashboard() {
   const staff = useStaff();
   const [date] = useState(todayLima);
   const [agenda, setAgenda] = useState<Agenda | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | Status>("ALL");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [clock, setClock] = useState(() => Date.now());
+
+  const profInfo = staff.professionalId
+    ? professionals.find((item) => item.id === staff.professionalId)
+    : null;
 
   useEffect(() => {
     const timer = setInterval(() => setClock(Date.now()), 30_000);
@@ -51,8 +74,15 @@ export default function StaffDashboard() {
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams({ date, days: "1", professionalId: staff.professionalId ?? "any" });
-    staffFetch<Agenda>("/api/panel/agenda?" + query, { signal: controller.signal })
-      .then(setAgenda)
+    Promise.all([
+      staffFetch<Agenda>("/api/panel/agenda?" + query, { signal: controller.signal }),
+      staffFetch<{ patients: Patient[] }>("/api/panel/pacientes", { signal: controller.signal }),
+    ])
+      .then(([agendaRes, patientsRes]) => {
+        if (controller.signal.aborted) return;
+        setAgenda(agendaRes);
+        setPatients(patientsRes.patients ?? []);
+      })
       .catch((problem) => {
         if (!controller.signal.aborted) setError(errorMessage(problem));
       });
@@ -65,7 +95,7 @@ export default function StaffDashboard() {
     setError("");
     try {
       await postJson("/api/panel/agenda", { action: "mark_reminder_30m", appointmentId });
-      setNotice("Recordatorio de 30 min marcado como enviado.");
+      setNotice("Recordatorio de 30 min al asistente marcado como gestionado.");
       setAttempt((v) => v + 1);
     } catch (problem) {
       setError(errorMessage(problem));
@@ -74,13 +104,13 @@ export default function StaffDashboard() {
     }
   }
 
-  async function markCheckedIn(appointmentId: string) {
+  async function updateStatus(appointmentId: string, status: Status, msg: string) {
     setBusyId(appointmentId);
     setNotice("");
     setError("");
     try {
-      await postJson("/api/panel/agenda", { action: "status", appointmentId, status: "CHECKED_IN" });
-      setNotice("Paciente marcado en sede.");
+      await postJson("/api/panel/agenda", { action: "status", appointmentId, status });
+      setNotice(msg);
       setAttempt((v) => v + 1);
     } catch (problem) {
       setError(errorMessage(problem));
@@ -95,6 +125,10 @@ export default function StaffDashboard() {
     .sort((first, second) => first.time.localeCompare(second.time));
   const pending = orderedQueue.filter((appointment) => appointment.status !== "COMPLETED");
 
+  const filteredAppointments = statusFilter === "ALL"
+    ? appointments
+    : appointments.filter((appt) => appt.status === statusFilter);
+
   const confirmedToday = orderedQueue.filter((a) => a.status === "CONFIRMED");
   const reminderItems = confirmedToday.map((appt) => {
     const startMs = atLima(appt.date, appt.time).getTime();
@@ -104,37 +138,43 @@ export default function StaffDashboard() {
   });
 
   const blocks = [...(agenda?.blocks ?? [])].sort((a, b) => a.time.localeCompare(b.time));
+  const firstPatientId = orderedQueue[0]?.patientId ?? patients[0]?.id ?? "";
 
   return (
     <div className={styles.stack}>
       <header className={styles.intro}>
         <h1>Hola, {staff.name}</h1>
-        <p>{roleLabels[staff.role]} · {dateLabel(date)}</p>
+        <p>
+          {profInfo ? `${profInfo.title} · ${profInfo.specialty}` : roleLabels[staff.role]}
+          {" · "}
+          {dateLabel(date)}
+        </p>
       </header>
 
       {notice && <p className={styles.notice} role="status">{notice}</p>}
 
-      {/* RECORDATORIO MANUAL 30 MIN ANTES DE LA VISITA (Antes de habilitar Bot WhatsApp) */}
+      {/* RECORDATORIO DEL SISTEMA AL ASISTENTE ENCARGADO (30 MIN ANTES) */}
       {staff.role !== "ODONTOLOGO" && (
         <section className={`${styles.card} ${styles.stack}`} aria-labelledby="reminders-30m-title">
           <div className={styles.row}>
             <div>
               <h2 id="reminders-30m-title">Confirmación de visita (30 min antes)</h2>
               <p className={styles.muted}>
-                Escribe a cada paciente 30 minutos antes de su cita para confirmar asistencia mientras se habilita el bot local de WhatsApp.
+                Recordatorio del sistema para el asistente encargado: llama o escribe al paciente 30 minutos antes para recordarle su cita y confirmar si podrá asistir.
               </p>
             </div>
-            <Link className={styles.secondary} href="/panel/mensajes">Ver tarea futura Bot WhatsApp</Link>
+            <Link className={styles.secondary} href="/panel/mensajes">Ver cola / Bot WhatsApp</Link>
           </div>
 
           {!agenda ? (
             <p className={styles.muted}>Revisando citas confirmadas de hoy…</p>
           ) : reminderItems.length === 0 ? (
-            <p className={styles.muted}>No hay citas confirmadas pendientes de asistencia para hoy.</p>
+            <p className={styles.muted}>No hay citas confirmadas pendientes de confirmación previa para hoy.</p>
           ) : (
             <div className={styles.stack}>
               {reminderItems.map(({ appt, minutesUntil, inUrgentWindow }) => {
                 const waUrl = whatsappConfirmHref(appt);
+                const phoneUrl = telHref(appt.patientPhone);
                 return (
                   <article
                     key={appt.id}
@@ -146,18 +186,23 @@ export default function StaffDashboard() {
                         <p className={styles.muted}>
                           {appt.serviceName} · Tel: {appt.patientPhone || "Sin teléfono"} ·{" "}
                           {appt.reminder30mSentAt
-                            ? "Confirmación previa enviada"
+                            ? "Asistente contactó al paciente"
                             : inUrgentWindow
-                              ? `Escribir ahora (faltan ${Math.max(0, minutesUntil)} min)`
+                              ? `¡Llamar o escribir ahora! (faltan ${Math.max(0, minutesUntil)} min)`
                               : minutesUntil > 35
-                                ? `Escribir a las ${minus30Label(appt.time)} (30 min antes)`
+                                ? `Avisar al asistente a las ${minus30Label(appt.time)} (30 min antes)`
                                 : "Turno ya iniciado"}
                         </p>
                       </div>
                       {appt.reminder30mSentAt ? (
-                        <span className={styles.reminderDoneBadge}>✓ Escrito (30m)</span>
+                        <span className={styles.reminderDoneBadge}>✓ Confirmado por asistente</span>
                       ) : (
                         <div className={styles.actions}>
+                          {phoneUrl && (
+                            <a href={phoneUrl} className={styles.secondary}>
+                              Llamar ({appt.patientPhone})
+                            </a>
+                          )}
                           {waUrl && (
                             <a
                               href={waUrl}
@@ -187,7 +232,7 @@ export default function StaffDashboard() {
         </section>
       )}
 
-      {/* CARD DE ORDEN DE ATENCIÓN DEL DÍA (Recepción / Odontología) */}
+      {/* CARD DE ORDEN DE ATENCIÓN DEL DÍA */}
       <section className={`${styles.card} ${styles.stack}`} aria-labelledby="today-title">
         <div className={styles.row}>
           <h2 id="today-title">
@@ -226,10 +271,15 @@ export default function StaffDashboard() {
                           type="button"
                           className={styles.secondary}
                           disabled={busyId === appointment.id}
-                          onClick={() => void markCheckedIn(appointment.id)}
+                          onClick={() => void updateStatus(appointment.id, "CHECKED_IN", "Paciente marcado en sala.")}
                         >
                           En sede
                         </button>
+                      )}
+                      {staff.role !== "RECEPCION" && (
+                        <Link className={styles.miniBtn} href={`/panel/clinica?paciente=${encodeURIComponent(appointment.patientId)}`}>
+                          Ficha
+                        </Link>
                       )}
                     </div>
                   </li>
@@ -263,18 +313,131 @@ export default function StaffDashboard() {
       </section>
 
       <div className={styles.shortcuts}>
-        <section className={`${styles.card} ${styles.stack}`}>
-          <h2>Pacientes</h2>
-          <p className={styles.muted}>Consulta los datos de contacto y las fichas a tu cargo.</p>
-          <Link className={styles.shortcutLink} href="/panel/pacientes">Ver pacientes</Link>
+        {/* LISTADO DE VISTA RÁPIDA DE PACIENTES CON ESTADOS */}
+        <section className={`${styles.card} ${styles.stack}`} aria-labelledby="quick-patients-title">
+          <div className={styles.row}>
+            <div>
+              <h2 id="quick-patients-title">Pacientes · Vista rápida</h2>
+              <p className={styles.muted}>Estado de citas de hoy y directorio directo.</p>
+            </div>
+            <Link className={styles.shortcutLink} href="/panel/pacientes">Ver directorio ({patients.length})</Link>
+          </div>
+
+          <div className={styles.quickChipRow} role="group" aria-label="Filtrar por estado">
+            {quickStatusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={statusFilter === opt.value}
+                className={`${styles.chipBtn} ${statusFilter === opt.value ? styles.chipBtnActive : ""}`}
+                onClick={() => setStatusFilter(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {filteredAppointments.length > 0 ? (
+            <ul className={styles.recordList}>
+              {filteredAppointments.map((appt) => (
+                <li key={appt.id} className={styles.queueRow}>
+                  <span className={styles.orderBadge}>{appt.time}</span>
+                  <div className={styles.eventTitle}>
+                    <strong>{appt.patientName}</strong>
+                    <small>{appt.serviceName}{appt.patientPhone ? ` · ${appt.patientPhone}` : ""}</small>
+                  </div>
+                  <div className={styles.actions}>
+                    <span className={styles.pill} data-status={appt.status}>{statusLabels[appt.status]}</span>
+                    <Link
+                      className={styles.miniBtn}
+                      href={staff.role !== "RECEPCION"
+                        ? `/panel/clinica?paciente=${encodeURIComponent(appt.patientId)}`
+                        : `/panel/pacientes?paciente=${encodeURIComponent(appt.patientId)}`}
+                    >
+                      Abrir
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <>
+              <p className={styles.muted}>
+                {appointments.length === 0
+                  ? "Sin turnos hoy con ese estado. Acceso directo a pacientes registrados:"
+                  : "No hay pacientes hoy con el estado seleccionado."}
+              </p>
+              {patients.length > 0 && statusFilter === "ALL" && (
+                <ul className={styles.recordList}>
+                  {patients.slice(0, 5).map((patient) => (
+                    <li key={patient.id} className={styles.queueRow}>
+                      <span className={styles.orderBadge}>PAC</span>
+                      <div className={styles.eventTitle}>
+                        <strong>{patient.name}</strong>
+                        <small>{patient.phone}{patient.dni ? ` · DNI ${patient.dni}` : ""}</small>
+                      </div>
+                      <div className={styles.actions}>
+                        <span className={styles.pill}>Registrado</span>
+                        <Link
+                          className={styles.miniBtn}
+                          href={staff.role !== "RECEPCION"
+                            ? `/panel/clinica?paciente=${encodeURIComponent(patient.id)}`
+                            : `/panel/pacientes?paciente=${encodeURIComponent(patient.id)}`}
+                        >
+                          Ficha
+                        </Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </section>
-        {staff.role !== "RECEPCION" && (
-          <section className={`${styles.card} ${styles.stack}`}>
-            <h2>Clínica</h2>
-            <p className={styles.muted}>Consulta atenciones, odontograma y planes de tratamiento.</p>
-            <Link className={styles.shortcutLink} href="/panel/clinica">Abrir clínica</Link>
+
+        {/* CLÍNICA CON BOTONES RÁPIDOS */}
+        {staff.role !== "RECEPCION" ? (
+          <section className={`${styles.card} ${styles.stack}`} aria-labelledby="quick-clinic-title">
+            <div className={styles.row}>
+              <div>
+                <h2 id="quick-clinic-title">Clínica · Accesos rápidos</h2>
+                <p className={styles.muted}>Atajos directos al llenado, odontograma y visualización.</p>
+              </div>
+              <Link className={styles.shortcutLink} href="/panel/clinica">Abrir clínica</Link>
+            </div>
+            <div className={styles.quickActionGrid}>
+              <Link
+                className={styles.quickActionCardBtn}
+                href={firstPatientId ? `/panel/clinica?paciente=${encodeURIComponent(firstPatientId)}` : "/panel/clinica"}
+              >
+                Llenar Historia Clínica
+                <span>Modo 1 · Anamnesis y examen</span>
+              </Link>
+              <Link
+                className={styles.quickActionCardBtn}
+                href={firstPatientId ? `/panel/clinica?paciente=${encodeURIComponent(firstPatientId)}&paso=odontograma` : "/panel/clinica"}
+              >
+                Odontograma (NTS 188)
+                <span>Inicial y Final interactivos</span>
+              </Link>
+              <Link
+                className={styles.quickActionCardBtn}
+                href={firstPatientId ? `/panel/clinica?paciente=${encodeURIComponent(firstPatientId)}&modo=view` : "/panel/clinica"}
+              >
+                Visualizar Datos / PDF
+                <span>Modo 2 · Ficha completa e impresión</span>
+              </Link>
+              <Link
+                className={styles.quickActionCardBtn}
+                href={firstPatientId ? `/panel/clinica?paciente=${encodeURIComponent(firstPatientId)}&paso=presupuesto` : "/panel/clinica"}
+              >
+                Presupuesto y Consentimiento
+                <span>Costos, abonos y GD DENTAL</span>
+              </Link>
+            </div>
           </section>
-        )}
+        ) : null}
+
         {staff.role !== "ODONTOLOGO" && (
           <section className={`${styles.card} ${styles.stack}`}>
             <h2>Pagos</h2>

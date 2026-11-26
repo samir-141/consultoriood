@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ClinicBrand } from "@/app/components/clinic-brand";
 import { PublicIcon } from "@/app/components/public-icon";
+import { lookupDniReniec } from "@/app/components/reniec-lookup";
 import {
   BookingError,
   bookingMessage,
@@ -109,6 +110,8 @@ export default function BookingFlow({
   // Formulario del paciente
   const [patient, setPatient] = useState<PatientForm>(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [reniecBusy, setReniecBusy] = useState(false);
+  const [reniecNote, setReniecNote] = useState("");
 
   // Cita creada
   const [hold, setHold] = useState<Hold | null>(null);
@@ -133,6 +136,33 @@ export default function BookingFlow({
   function goToStep(next: BookingStep) {
     setServerError("");
     setStep(next);
+  }
+
+  async function consultReniec(rawDni: string, overwriteName: boolean) {
+    const clean = rawDni.replace(/\D/g, "").slice(0, 8);
+    if (clean.length !== 8) {
+      setReniecNote("Ingresa un DNI de 8 dígitos para consultar en RENIEC.");
+      return;
+    }
+    setReniecBusy(true);
+    setReniecNote("");
+    try {
+      const res = await lookupDniReniec(clean);
+      if (res.ok && res.fullName) {
+        setPatient((prev) => ({
+          ...prev,
+          dni: clean,
+          name: overwriteName || !prev.name.trim() ? res.fullName! : prev.name,
+        }));
+        setReniecNote("✓ Nombre completado automáticamente desde RENIEC.");
+      } else {
+        setReniecNote(res.message ?? res.error ?? "No se encontró el DNI en RENIEC; ingresa el nombre manualmente.");
+      }
+    } catch {
+      setReniecNote("No pudimos consultar RENIEC ahora; ingresa el nombre manualmente.");
+    } finally {
+      setReniecBusy(false);
+    }
   }
 
   // Validación en cliente del Paso 3
@@ -321,224 +351,238 @@ export default function BookingFlow({
 
             {serverError && <div className={styles.errorAlert}>{serverError}</div>}
 
-            {/* Regla condicional: Selector de servicio solo si hay más de uno */}
-            {catalog.services.length > 1 ? (
-              <div className={styles.selectorBlock}>
-                <label htmlFor="service-select" className={styles.selectorLabel}>
-                  Tratamiento o servicio:
-                </label>
-                <select
-                  id="service-select"
-                  value={serviceId}
-                  onChange={(e) => {
-                    setServiceId(e.target.value);
-                    setSelectedSlot(null);
-                  }}
-                  className={styles.selectInput}
-                >
-                  {catalog.services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.duration} min · {price(s.priceCents)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className={styles.autoAssignedNotice}>
-                Servicio: <strong>{currentService.name}</strong> ({currentService.duration} min)
-              </div>
-            )}
-
-            {/* Regla condicional: Selector de doctor solo si hay más de uno */}
-            {catalog.professionals.length > 1 ? (
-              <div className={styles.selectorBlock}>
-                <label htmlFor="doctor-select" className={styles.selectorLabel}>
-                  Odontólogo de preferencia:
-                </label>
-                <select
-                  id="doctor-select"
-                  value={professionalId}
-                  onChange={(e) => {
-                    setProfessionalId(e.target.value);
-                    setSelectedSlot(null);
-                  }}
-                  className={styles.selectInput}
-                >
-                  <option value="any">Primer profesional disponible</option>
-                  {catalog.professionals.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.title})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className={styles.autoAssignedNotice}>
-                <PublicIcon name="professional" />
-                <span>
-                  Profesional: <strong>{assignedDoctor.name}</strong> ({assignedDoctor.title})
-                </span>
-              </div>
-            )}
-
-            {/* Calendario con fechas pasadas, domingos, cirugías/días sin doctores y días llenos deshabilitados */}
-            <div className={styles.calendarWrapper}>
-              <CalendarPicker
-                selectedDate={date}
-                dayStates={monthDays}
-                loadingMonth={monthHook.loading}
-                onMonthChange={(m) => setVisibleMonth(m)}
-                onSelectDate={(newDate) => {
-                  setManualDate(newDate);
-                  setSelectedSlot(null);
-                  if (newDate && newDate.length >= 7) {
-                    setVisibleMonth(newDate.slice(0, 7));
-                  }
-                }}
-              />
-            </div>
-
-            {isSelectedDateBlocked ? (
-              <div className={styles.errorAlert}>
-                {selectedDayState?.status === "NO_DOCTORS"
-                  ? "No hay doctores disponibles en esta fecha (agenda bloqueada). Por favor selecciona otro día."
-                  : "El día seleccionado ya no tiene horarios web disponibles y no es reservable. Elige otra fecha en el calendario."}
-              </div>
-            ) : (
-              <div className={styles.selectedDateBanner}>
-                Fecha seleccionada: <strong>{readableDate(date)}</strong>
-                {selectedDayState && selectedDayState.availableCount > 0 && (
-                  <span> · {selectedDayState.availableCount} horarios disponibles</span>
-                )}
-              </div>
-            )}
-
-            <div className={styles.walkInBanner}>
-              <PublicIcon name="clock" />
-              <div>
-                <strong>
-                  {monthHook.data?.todayStatus === "CUTOFF_WALKIN"
-                    ? "Hoy: se aceptan consultas presenciales (con posible espera)"
-                    : "Reservas web con 15 min de anticipación"}
-                </strong>
-                <span>
-                  {monthHook.data?.walkInMessage ||
-                    "Toda reserva en línea debe realizarse al menos 15 minutos antes del horario previsto. Si pasas ese margen dentro del horario de atención, se aceptan consultas presenciales en el consultorio (con posible espera)."}
-                </span>
-              </div>
-            </div>
-
-            {/* SELECTOR DE HORARIO DESPLEGABLE ANIMADO AL SELECCIONAR FECHA VÁLIDA */}
-            {!isSelectedDateBlocked && date && (
-              <div
-                key={`${date}-${serviceId}`}
-                ref={scheduleRef}
-                className={styles.scheduleDrawer}
-                aria-live="polite"
-              >
-                <div className={styles.scheduleDrawerHeader}>
-                  <h2 className={styles.scheduleDrawerTitle}>
-                    Horarios para el {readableDate(date)}
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => slotsHook.refresh()}
-                    className={styles.refreshBtn}
+            <div className={styles.selectorsBar}>
+              {/* Regla condicional: Selector de servicio solo si hay más de uno */}
+              {catalog.services.length > 1 ? (
+                <div className={styles.selectorBlock}>
+                  <label htmlFor="service-select" className={styles.selectorLabel}>
+                    Tratamiento o servicio:
+                  </label>
+                  <select
+                    id="service-select"
+                    value={serviceId}
+                    onChange={(e) => {
+                      setServiceId(e.target.value);
+                      setSelectedSlot(null);
+                    }}
+                    className={styles.selectInput}
                   >
-                    Actualizar cupos
-                  </button>
+                    {catalog.services.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.duration} min · {price(s.priceCents)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className={styles.autoAssignedNotice}>
+                  Servicio: <strong>{currentService.name}</strong> ({currentService.duration} min)
+                </div>
+              )}
+
+              {/* Regla condicional: Selector de doctor solo si hay más de uno */}
+              {catalog.professionals.length > 1 ? (
+                <div className={styles.selectorBlock}>
+                  <label htmlFor="doctor-select" className={styles.selectorLabel}>
+                    Odontólogo de preferencia:
+                  </label>
+                  <select
+                    id="doctor-select"
+                    value={professionalId}
+                    onChange={(e) => {
+                      setProfessionalId(e.target.value);
+                      setSelectedSlot(null);
+                    }}
+                    className={styles.selectInput}
+                  >
+                    <option value="any">Primer profesional disponible</option>
+                    {catalog.professionals.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.title})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className={styles.autoAssignedNotice}>
+                  <PublicIcon name="professional" />
+                  <span>
+                    Profesional: <strong>{assignedDoctor.name}</strong> ({assignedDoctor.title})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Cuadrantes adaptables: Calendario a la izquierda + Horarios al costado */}
+            <div className={styles.bookingSplit}>
+              <div className={styles.calendarColumn}>
+                <div className={styles.calendarWrapper}>
+                  <CalendarPicker
+                    selectedDate={date}
+                    dayStates={monthDays}
+                    loadingMonth={monthHook.loading}
+                    onMonthChange={(m) => setVisibleMonth(m)}
+                    onSelectDate={(newDate) => {
+                      setManualDate(newDate);
+                      setSelectedSlot(null);
+                      if (newDate && newDate.length >= 7) {
+                        setVisibleMonth(newDate.slice(0, 7));
+                      }
+                    }}
+                  />
                 </div>
 
-                <div className={styles.intervalPolicyNote}>
-                  {currentService.duration > 30 ? (
-                    <>
-                      Los intervalos son de <strong>30 min</strong> y <strong>{currentService.name}</strong> dura{" "}
-                      <strong>{currentService.duration} min</strong>: al elegir una hora, se bloquearán{" "}
-                      <strong>2 bloques consecutivos</strong> para evitar cruces de atención.
-                    </>
-                  ) : (
-                    <>
-                      Intervalos de <strong>30 min</strong> ({currentService.duration} min por consulta). Los horarios en gris ya están reservados, en cirugía o bloqueados.
-                    </>
-                  )}
-                </div>
-
-                {slotsLoading && (
-                  <div className={styles.loadingBox}>
-                    <span className={styles.spinner} />
-                    <p>Consultando horarios disponibles en tiempo real con el consultorio...</p>
-                  </div>
-                )}
-
-                {!slotsLoading && slotsError && (
+                {isSelectedDateBlocked ? (
                   <div className={styles.errorAlert}>
-                    <p>{slotsError}</p>
-                    <button
-                      type="button"
-                      onClick={() => slotsHook.refresh()}
-                      className={styles.retryBtn}
-                    >
-                      Reintentar consulta
-                    </button>
+                    {selectedDayState?.status === "NO_DOCTORS"
+                      ? "No hay doctores disponibles en esta fecha (agenda bloqueada). Por favor selecciona otro día."
+                      : "El día seleccionado ya no tiene horarios web disponibles y no es reservable. Elige otra fecha en el calendario."}
+                  </div>
+                ) : (
+                  <div className={styles.selectedDateBanner}>
+                    Fecha seleccionada: <strong>{readableDate(date)}</strong>
+                    {selectedDayState && selectedDayState.availableCount > 0 && (
+                      <span> · {selectedDayState.availableCount} horarios disponibles</span>
+                    )}
                   </div>
                 )}
 
-                {!slotsLoading && !slotsError && availableSlots.length === 0 && (
-                  <div className={styles.emptyBox}>
-                    <PublicIcon name="calendar" />
-                    <h3>Este día ya no es reservable en línea</h3>
-                    <p>
-                      {slotsHook.daily?.mensajeWalkIn ||
-                        "Todos los turnos de esta fecha están ocupados, bloqueados o superaron el límite de 15 minutos previos."}
-                    </p>
+                <div className={styles.walkInBanner}>
+                  <PublicIcon name="clock" />
+                  <div>
+                    <strong>
+                      {monthHook.data?.todayStatus === "CUTOFF_WALKIN"
+                        ? "Hoy: se aceptan consultas presenciales (con posible espera)"
+                        : "Reservas web con 15 min de anticipación"}
+                    </strong>
+                    <span>
+                      {monthHook.data?.walkInMessage ||
+                        "Toda reserva en línea debe realizarse al menos 15 minutos antes del horario previsto. Si pasas ese margen dentro del horario de atención, se aceptan consultas presenciales en el consultorio (con posible espera)."}
+                    </span>
                   </div>
-                )}
+                </div>
+              </div>
 
-                {!slotsLoading && !slotsError && availableSlots.length > 0 && (
-                  <div className={styles.slotsContainer}>
-                    {morningIntervals.length > 0 && (
-                      <div className={styles.slotGroup}>
-                        <h3 className={styles.slotGroupTitle}>Mañana (09:00 a 12:00)</h3>
-                        <div className={styles.slotGrid}>
-                          {morningIntervals.map((item) => renderIntervalButton(item))}
-                        </div>
-                      </div>
-                    )}
-
-                    {afternoonIntervals.length > 0 && (
-                      <div className={styles.slotGroup}>
-                        <h3 className={styles.slotGroupTitle}>Tarde (12:00 a 17:00)</h3>
-                        <div className={styles.slotGrid}>
-                          {afternoonIntervals.map((item) => renderIntervalButton(item))}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedSlot && (
-                      <div className={styles.chosenSlotBanner}>
-                        Horario seleccionado y bloqueado para ti:{" "}
-                        <strong>
-                          {selectedSlot.time}
-                          {secondBlockTime ? ` – ${addMinutesToTime(selectedSlot.time, currentService.duration)} (2 bloques de 30 min)` : ""}
-                        </strong>{" "}
-                        del {readableDate(selectedSlot.date)}
-                      </div>
-                    )}
-
-                    <div className={styles.actionRow}>
+              {/* Cuadrante derecho: Selector de horarios al costado del calendario */}
+              <div className={styles.scheduleColumn}>
+                {!isSelectedDateBlocked && date ? (
+                  <div
+                    key={`${date}-${serviceId}`}
+                    ref={scheduleRef}
+                    className={styles.scheduleDrawer}
+                    aria-live="polite"
+                  >
+                    <div className={styles.scheduleDrawerHeader}>
+                      <h2 className={styles.scheduleDrawerTitle}>
+                        Horarios para el {readableDate(date)}
+                      </h2>
                       <button
                         type="button"
-                        className="button"
-                        disabled={!selectedSlot}
-                        onClick={() => goToStep(2)}
+                        onClick={() => slotsHook.refresh()}
+                        className={styles.refreshBtn}
                       >
-                        Completar mis datos <PublicIcon name="arrow" />
+                        Actualizar cupos
                       </button>
                     </div>
+
+                    <div className={styles.intervalPolicyNote}>
+                      {currentService.duration > 30 ? (
+                        <>
+                          Los intervalos son de <strong>30 min</strong> y <strong>{currentService.name}</strong> dura{" "}
+                          <strong>{currentService.duration} min</strong>: al elegir una hora, se bloquearán{" "}
+                          <strong>2 bloques consecutivos</strong> para evitar cruces de atención.
+                        </>
+                      ) : (
+                        <>
+                          Intervalos de <strong>30 min</strong> ({currentService.duration} min por consulta). Los horarios en gris ya están reservados, en cirugía o bloqueados.
+                        </>
+                      )}
+                    </div>
+
+                    {slotsLoading && (
+                      <div className={styles.loadingBox}>
+                        <span className={styles.spinner} />
+                        <p>Consultando horarios disponibles en tiempo real con el consultorio...</p>
+                      </div>
+                    )}
+
+                    {!slotsLoading && slotsError && (
+                      <div className={styles.errorAlert}>
+                        <p>{slotsError}</p>
+                        <button
+                          type="button"
+                          onClick={() => slotsHook.refresh()}
+                          className={styles.retryBtn}
+                        >
+                          Reintentar consulta
+                        </button>
+                      </div>
+                    )}
+
+                    {!slotsLoading && !slotsError && availableSlots.length === 0 && (
+                      <div className={styles.emptyBox}>
+                        <PublicIcon name="calendar" />
+                        <h3>Este día ya no es reservable en línea</h3>
+                        <p>
+                          {slotsHook.daily?.mensajeWalkIn ||
+                            "Todos los turnos de esta fecha están ocupados, bloqueados o superaron el límite de 15 minutos previos."}
+                        </p>
+                      </div>
+                    )}
+
+                    {!slotsLoading && !slotsError && availableSlots.length > 0 && (
+                      <div className={styles.slotsContainer}>
+                        {morningIntervals.length > 0 && (
+                          <div className={styles.slotGroup}>
+                            <h3 className={styles.slotGroupTitle}>Mañana (09:00 a 12:00)</h3>
+                            <div className={styles.slotGrid}>
+                              {morningIntervals.map((item) => renderIntervalButton(item))}
+                            </div>
+                          </div>
+                        )}
+
+                        {afternoonIntervals.length > 0 && (
+                          <div className={styles.slotGroup}>
+                            <h3 className={styles.slotGroupTitle}>Tarde (12:00 a 17:00)</h3>
+                            <div className={styles.slotGrid}>
+                              {afternoonIntervals.map((item) => renderIntervalButton(item))}
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedSlot && (
+                          <div className={styles.chosenSlotBanner}>
+                            Horario seleccionado y bloqueado para ti:{" "}
+                            <strong>
+                              {selectedSlot.time}
+                              {secondBlockTime ? ` – ${addMinutesToTime(selectedSlot.time, currentService.duration)} (2 bloques de 30 min)` : ""}
+                            </strong>{" "}
+                            del {readableDate(selectedSlot.date)}
+                          </div>
+                        )}
+
+                        <div className={styles.actionRow}>
+                          <button
+                            type="button"
+                            className="button"
+                            disabled={!selectedSlot}
+                            onClick={() => goToStep(2)}
+                          >
+                            Completar mis datos <PublicIcon name="arrow" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className={styles.emptyBox}>
+                    <PublicIcon name="calendar" />
+                    <h3>Elige una fecha disponible</h3>
+                    <p>Selecciona un día habilitado en el calendario para ver sus horarios disponibles al instante.</p>
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </section>
         )}
 
@@ -555,6 +599,61 @@ export default function BookingFlow({
             {serverError && <div className={styles.errorAlert}>{serverError}</div>}
 
             <form onSubmit={handleSubmitBooking} className={styles.patientForm} noValidate>
+              <div className={styles.formRow}>
+                <div className={styles.formField}>
+                  <label htmlFor="patient-dni" className={styles.formLabel}>
+                    DNI (autocompleta nombre con RENIEC)
+                  </label>
+                  <div className={styles.reniecInputRow}>
+                    <input
+                      id="patient-dni"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={8}
+                      placeholder="Ej. 45678901"
+                      value={patient.dni}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        setPatient((prev) => ({ ...prev, dni: val }));
+                        if (val.length === 8 && !patient.name.trim()) {
+                          void consultReniec(val, false);
+                        }
+                      }}
+                      className={styles.textInput}
+                    />
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      disabled={reniecBusy || patient.dni.replace(/\D/g, "").length !== 8}
+                      onClick={() => void consultReniec(patient.dni, true)}
+                    >
+                      {reniecBusy ? "Buscando…" : "RENIEC"}
+                    </button>
+                  </div>
+                  {reniecNote && (
+                    <span className={reniecNote.startsWith("✓") ? styles.reniecSuccessMsg : styles.reniecMutedMsg}>
+                      {reniecNote}
+                    </span>
+                  )}
+                </div>
+
+                <div className={styles.formField}>
+                  <label htmlFor="patient-phone" className={styles.formLabel}>
+                    Teléfono / Celular <span className={styles.req}>*</span>
+                  </label>
+                  <input
+                    id="patient-phone"
+                    type="tel"
+                    required
+                    placeholder="Ej. 966000000"
+                    value={patient.phone}
+                    onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
+                    className={`${styles.textInput} ${formErrors.phone ? styles.inputError : ""}`}
+                  />
+                  {formErrors.phone && <span className={styles.fieldErrorMsg}>{formErrors.phone}</span>}
+                </div>
+              </div>
+
               <div className={styles.formField}>
                 <label htmlFor="patient-name" className={styles.formLabel}>
                   Nombre completo <span className={styles.req}>*</span>
@@ -563,44 +662,12 @@ export default function BookingFlow({
                   id="patient-name"
                   type="text"
                   required
-                  placeholder="Ej. Carmen Rosa Quispe Flores"
+                  placeholder="Se completa con RENIEC o escríbelo manualmente"
                   value={patient.name}
                   onChange={(e) => setPatient({ ...patient, name: e.target.value })}
                   className={`${styles.textInput} ${formErrors.name ? styles.inputError : ""}`}
                 />
                 {formErrors.name && <span className={styles.fieldErrorMsg}>{formErrors.name}</span>}
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formField}>
-                  <label htmlFor="patient-phone" className={styles.formLabel}>
-                    Teléfono o DNI <span className={styles.req}>*</span>
-                  </label>
-                  <input
-                    id="patient-phone"
-                    type="text"
-                    required
-                    placeholder="Ej. 966000000 o 45678901"
-                    value={patient.phone}
-                    onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
-                    className={`${styles.textInput} ${formErrors.phone ? styles.inputError : ""}`}
-                  />
-                  {formErrors.phone && <span className={styles.fieldErrorMsg}>{formErrors.phone}</span>}
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor="patient-dni" className={styles.formLabel}>
-                    DNI / Documento (opcional)
-                  </label>
-                  <input
-                    id="patient-dni"
-                    type="text"
-                    placeholder="Ej. 45678901"
-                    value={patient.dni}
-                    onChange={(e) => setPatient({ ...patient, dni: e.target.value })}
-                    className={styles.textInput}
-                  />
-                </div>
               </div>
 
               <div className={styles.formField}>
@@ -632,6 +699,11 @@ export default function BookingFlow({
                 />
               </div>
 
+              <div className={styles.assistantReminderNotice}>
+                <strong>Confirmación previa del asistente (30 min antes):</strong>{" "}
+                el sistema recordará a nuestro asistente encargado llamarte o escribirte por WhatsApp 30 minutos antes de tu cita para confirmar si podrás asistir.
+              </div>
+
               <div className={styles.checkboxField}>
                 <label className={styles.checkboxLabel}>
                   <input
@@ -640,7 +712,7 @@ export default function BookingFlow({
                     onChange={(e) => setPatient({ ...patient, whatsappOptIn: e.target.checked })}
                     className={styles.checkboxInput}
                   />
-                  <span>Deseo recibir confirmación y recordatorio de mi cita por WhatsApp o mensaje</span>
+                  <span>Autorizo que el asistente de la clínica me llame o escriba por WhatsApp 30 minutos antes para confirmar asistencia</span>
                 </label>
               </div>
 

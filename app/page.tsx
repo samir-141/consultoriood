@@ -92,7 +92,10 @@ export default function HomePage() {
 
           <div className={`shell ${styles.heroGrid}`}>
             <div className={styles.heroCopy}>
-              <span className={styles.heroBadge}>ODONTOLOGÍA INTEGRAL Y ESPECIALIZADA</span>
+              <span className={styles.heroBadge}>
+                <span className={styles.heroBadgeDot} aria-hidden="true" />
+                <span>Odontología integral y especializada</span>
+              </span>
 
               <h1 id="hero-title" className={styles.heroTitle}>
                 {clinic.heroHeadline}
@@ -101,15 +104,13 @@ export default function HomePage() {
               <p className={styles.heroLead}>{clinic.valueProposition}</p>
 
               <div className={styles.heroActions}>
-                <a
-                  href={whatsappUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/reservar"
                   className={`button ${styles.heroCtaPrimary}`}
                 >
-                  <PublicIcon name="whatsapp" />
-                  <span>AGENDA TU CITA</span>
-                </a>
+                  <PublicIcon name="calendar" />
+                  <span>Agenda tu cita</span>
+                </Link>
                 <a href="#servicios" className="button-secondary">
                   Ver tratamientos
                 </a>
@@ -129,6 +130,7 @@ export default function HomePage() {
 
             <div className={styles.heroMediaWrap}>
               <div className={styles.heroMediaBackdrop}>
+                <div className={styles.heroOrganicGlow} aria-hidden="true" />
                 <div className={styles.heroOrganicBack} aria-hidden="true" />
                 <div className={styles.heroOrganicMid} aria-hidden="true" />
                 <div className={styles.heroImageFrame}>
@@ -143,7 +145,9 @@ export default function HomePage() {
                   />
                 </div>
                 <div className={styles.heroFloatingTag}>
-                  <PublicIcon name="shield" />
+                  <span className={styles.heroFloatingTagIcon} aria-hidden="true">
+                    <PublicIcon name="shield" />
+                  </span>
                   <div>
                     <strong>{clinic.fullName}</strong>
                     <span>{clinic.location}</span>
@@ -193,18 +197,21 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className={styles.serviceWhatsAppLink}
                   >
+                    <PublicIcon name="whatsapp" />
                     <span>Consultar por WhatsApp →</span>
                   </a>
                 </article>
               ))}
             </div>
 
-            <p className={styles.onlineBookingBar}>
-              ¿Prefieres elegir tu horario directamente?{" "}
-              <Link href="/reservar" className={styles.onlineBookingLink}>
-                Reserva tu evaluación en línea aquí →
-              </Link>
-            </p>
+            <div className={styles.onlineBookingWrap}>
+              <p className={styles.onlineBookingBar}>
+                ¿Prefieres elegir tu horario directamente?{" "}
+                <Link href="/reservar" className={styles.onlineBookingLink}>
+                  Reserva tu cita en línea aquí →
+                </Link>
+              </p>
+            </div>
           </div>
         </section>
 
@@ -295,7 +302,7 @@ export default function HomePage() {
                   </li>
 
                   <li className={styles.contactDetailItem}>
-                    <span className={styles.contactIconCircle}>
+                    <span className={`${styles.contactIconCircle} ${styles.contactIconCircleWhatsapp}`}>
                       <PublicIcon name="whatsapp" />
                     </span>
                     <div>
@@ -333,11 +340,11 @@ export default function HomePage() {
                   href={whatsappUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="button"
+                  className={`button ${styles.whatsappButton}`}
                   style={{ width: "100%" }}
                 >
                   <PublicIcon name="whatsapp" />
-                  <span>ESCRIBIR POR WHATSAPP</span>
+                  <span>Escribir por WhatsApp</span>
                 </a>
               </div>
 
