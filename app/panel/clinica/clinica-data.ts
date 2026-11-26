@@ -1,3 +1,4 @@
+import type { ClinicalHistoryData } from "@/lib/clinical-history";
 import { statusLabels, type Status } from "../agenda/staff";
 
 export type Patient = {
@@ -5,6 +6,7 @@ export type Patient = {
   name: string;
   phone?: string;
   email?: string;
+  dni?: string | null;
   birthDate?: string;
 };
 
@@ -80,6 +82,8 @@ type AuditEvent = {
 
 export type PatientRecord = {
   patient: Patient & { background?: string | null; consents?: Consent[] };
+  history: ClinicalHistoryData;
+  historyMeta: { updatedAt: string; updatedByName: string | null } | null;
   appointments: Appointment[];
   notes: ClinicalNote[];
   odontogram: OdontogramEntry[];

@@ -4,19 +4,57 @@ import { requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { HttpError, readJson } from "@/lib/http";
 import { privateDownload, privateJson, readClinicalUpload, type PrivateFile } from "@/lib/clinical-files";
+import { mergeClinicalHistory, validateClinicalHistoryPayload, type ClinicalHistoryData } from "@/lib/clinical-history";
 import { integerBetween, oneOf, optionalId, optionalText, requiredId, requiredText, toothNumber } from "@/lib/clinical-validation";
 
 type Staff = Awaited<ReturnType<typeof requireUser>>;
 type Query = Pick<PGlite, "query">;
-type Patient = { id: string; name: string; phone: string | null; email: string | null; birthDate: string | null; background: string };
+type Patient = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  dni: string | null;
+  birthDate: string | null;
+  background: string;
+};
 type PlanItem = { id: string; tooth: number | null; procedure: string; priceCents: number; status: string; planId: string };
 type Plan = { id: string; title: string; status: string; createdAt: Date };
 type ClinicalResult = { response: Response; resourceId?: string };
 type AuditResult = "OK" | "DENIED" | "ERROR";
 
 const planStatuses = ["DRAFT", "PROPOSED", "ACCEPTED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
-const clinicalActions = ["note", "odontogram", "plan", "plan-status", "consent", "background"] as const;
+const clinicalActions = ["note", "odontogram", "plan", "plan-status", "consent", "background", "history"] as const;
 const noBody = () => null;
+let historySchemaReady: Promise<void> | null = null;
+
+async function ensureHistorySchema(db: PGlite) {
+  historySchemaReady ??= (async () => {
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS clinical_histories (
+        patient_id TEXT PRIMARY KEY REFERENCES patients(id),
+        record_number TEXT NOT NULL DEFAULT '',
+        attention_date DATE,
+        data JSONB NOT NULL DEFAULT '{}'::jsonb,
+        updated_by TEXT REFERENCES users(id),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS clinical_history_revisions (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        author_id TEXT NOT NULL REFERENCES users(id),
+        data JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS clinical_history_revisions_patient
+        ON clinical_history_revisions (patient_id, created_at DESC);
+    `);
+  })().catch((err) => {
+    historySchemaReady = null;
+    throw err;
+  });
+  await historySchemaReady;
+}
 
 async function recordAudit(
   db: Query,
@@ -59,12 +97,13 @@ async function withClinicalRecord<T>(
       throw new HttpError(403, "Tu rol no tiene acceso a la ficha clínica.");
     }
     const db = await getDb();
+    await ensureHistorySchema(db);
     if (prepare !== noBody) await requireAssignment(db, user, patientId);
     const input = await prepare();
     return await db.transaction(async (tx) => {
       await requireAssignment(tx, user, patientId, true);
       const { rows } = await tx.query<Patient>(`
-        SELECT id, name, phone, email, birth_date::text AS "birthDate", background
+        SELECT id, name, phone, email, dni, birth_date::text AS "birthDate", background
         FROM patients WHERE id = $1
       `, [patientId]);
       const patient = rows[0];
@@ -127,12 +166,38 @@ export async function readClinicalRecord(request: Request, id: string) {
       SELECT id, name, mime, size, created_at AS "createdAt"
       FROM clinical_attachments WHERE patient_id = $1 ORDER BY created_at DESC, id
     `, args);
+    const { rows: historyRows } = await tx.query<{
+      data: Partial<ClinicalHistoryData>;
+      updatedAt: string;
+      updatedByName: string | null;
+    }>(`
+      SELECT h.data, h.updated_at AS "updatedAt", u.name AS "updatedByName"
+      FROM clinical_histories h
+      LEFT JOIN users u ON u.id = h.updated_by
+      WHERE h.patient_id = $1
+    `, args);
+    const savedHistory = historyRows[0];
+    const history = mergeClinicalHistory(savedHistory?.data, patient);
     const audit = user.role === "ADMIN" ? (await tx.query(`
       SELECT a.id, a.action, a.result, a.created_at AS "createdAt", COALESCE(u.name, 'Sin sesión') AS "actorName"
       FROM clinical_audit a LEFT JOIN users u ON u.id = a.actor_id
       WHERE a.patient_id = $1 ORDER BY a.created_at DESC, a.id LIMIT 100
     `, args)).rows : [];
-    return { response: privateJson({ patient: { ...patient, consents }, appointments, notes, odontogram, plans, attachments, audit }) };
+    return {
+      response: privateJson({
+        patient: { ...patient, consents },
+        history,
+        historyMeta: savedHistory
+          ? { updatedAt: savedHistory.updatedAt, updatedByName: savedHistory.updatedByName }
+          : null,
+        appointments,
+        notes,
+        odontogram,
+        plans,
+        attachments,
+        audit,
+      }),
+    };
   });
 }
 
@@ -245,6 +310,42 @@ export async function writeClinicalRecord(request: Request, id: string) {
           patient.id, optionalText(body.background, "los antecedentes clínicos", 5000),
         ]);
         break;
+      case "history": {
+        const validated = validateClinicalHistoryPayload(body.history);
+        const revisionId = randomUUID();
+        resourceId = revisionId;
+        await tx.query(`
+          INSERT INTO clinical_histories (patient_id, record_number, attention_date, data, updated_by, updated_at)
+          VALUES ($1, $2, NULLIF($3, '')::date, $4::jsonb, $5, now())
+          ON CONFLICT (patient_id) DO UPDATE SET
+            record_number = EXCLUDED.record_number,
+            attention_date = EXCLUDED.attention_date,
+            data = EXCLUDED.data,
+            updated_by = EXCLUDED.updated_by,
+            updated_at = now()
+        `, [
+          patient.id,
+          validated.recordNumber,
+          validated.attentionDate,
+          JSON.stringify(validated),
+          user.id,
+        ]);
+        await tx.query(`
+          INSERT INTO clinical_history_revisions (id, patient_id, author_id, data)
+          VALUES ($1, $2, $3, $4::jsonb)
+        `, [revisionId, patient.id, user.id, JSON.stringify(validated)]);
+
+        if (validated.filiation.dni || validated.background.personalHistory) {
+          await tx.query(`
+            UPDATE patients
+            SET
+              dni = COALESCE(NULLIF($2, ''), dni),
+              background = COALESCE(NULLIF($3, ''), background)
+            WHERE id = $1
+          `, [patient.id, validated.filiation.dni, validated.background.personalHistory]);
+        }
+        break;
+      }
     }
     return { response: privateJson({ id: resourceId }, 201), resourceId };
   });

@@ -12,14 +12,21 @@ export type Sql = Pick<PGlite, "query" | "exec">;
 const state = globalThis as typeof globalThis & { dentalDatabase101?: Promise<PGlite> };
 
 export const demoAccounts = [
-  { id: "demo-admin", name: "Administración Demo", email: "admin@demo.test", role: "ADMIN", professional: null },
-  { id: "demo-frontdesk", name: "Recepción Demo", email: "recepcion@demo.test", role: "RECEPCION", professional: null },
-  { id: "demo-dentist", name: "Odontóloga A", email: "odontologia@demo.test", role: "ODONTOLOGO", professional: "odonto-a" },
+  { id: "demo-admin", name: "Administración Clínica", email: "admin@demo.test", role: "ADMIN", professional: null },
+  { id: "demo-frontdesk", name: "Asistente de Recepción", email: "recepcion@demo.test", role: "RECEPCION", professional: null },
+  { id: "demo-dentist", name: "Edu Gómez Delgado", email: "odontologia@demo.test", role: "ODONTOLOGO", professional: "odonto-a" },
 ] as const;
 
 async function seed(sql: Sql) {
   const existing = await sql.query("SELECT 1 FROM users LIMIT 1");
-  if (existing.rows.length) return;
+  if (existing.rows.length) {
+    // Sincronizar nombres reales si la BD local tenía nombres genéricos de semilla previa
+    await sql.query("UPDATE users SET name = 'Edu Gómez Delgado' WHERE id = 'demo-dentist' AND name = 'Odontóloga A'");
+    await sql.query("UPDATE users SET name = 'Asistente de Recepción' WHERE id = 'demo-frontdesk' AND name = 'Recepción Demo'");
+    await sql.query("UPDATE users SET name = 'Administración Clínica' WHERE id = 'demo-admin' AND name = 'Administración Demo'");
+    await sql.query("UPDATE appointments SET professional_name = 'Edu Gómez Delgado' WHERE professional_id = 'odonto-a' AND professional_name = 'Odontóloga A'");
+    return;
+  }
   for (const user of demoAccounts) {
     await sql.query(
       "INSERT INTO users (id, name, email, role, professional_id, password_hash) VALUES ($1,$2,$3,$4,$5,$6)",
@@ -34,7 +41,7 @@ async function seed(sql: Sql) {
   `);
   const day = demoDay();
   const sessionSeeds = [
-    ["cita-demo-1", "paciente-demo-1", "odonto-a", "Odontóloga A", "09:00", "09:30", "09:40"],
+    ["cita-demo-1", "paciente-demo-1", "odonto-a", "Edu Gómez Delgado", "09:00", "09:30", "09:40"],
     ["cita-demo-2", "paciente-demo-2", "odonto-b", "Odontólogo B", "10:30", "11:00", "11:10"],
   ];
   for (const [id, patient, professional, name, start, end, occupied] of sessionSeeds) {

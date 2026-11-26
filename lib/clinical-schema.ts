@@ -81,6 +81,25 @@ export const clinicalSchema = `
   );
   CREATE INDEX IF NOT EXISTS clinical_audit_patient ON clinical_audit (patient_id, created_at DESC);
 
+  CREATE TABLE IF NOT EXISTS clinical_histories (
+    patient_id TEXT PRIMARY KEY REFERENCES patients(id),
+    record_number TEXT NOT NULL DEFAULT '',
+    attention_date DATE,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_by TEXT REFERENCES users(id),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS clinical_history_revisions (
+    id TEXT PRIMARY KEY,
+    patient_id TEXT NOT NULL REFERENCES patients(id),
+    author_id TEXT NOT NULL REFERENCES users(id),
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS clinical_history_revisions_patient
+    ON clinical_history_revisions (patient_id, created_at DESC);
+
   CREATE OR REPLACE FUNCTION reject_clinical_history_change() RETURNS trigger
   LANGUAGE plpgsql AS $$
   BEGIN
@@ -95,5 +114,7 @@ export const clinicalSchema = `
   CREATE OR REPLACE TRIGGER clinical_consents_append_only BEFORE UPDATE OR DELETE ON clinical_consents
     FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
   CREATE OR REPLACE TRIGGER clinical_audit_append_only BEFORE UPDATE OR DELETE ON clinical_audit
+    FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
+  CREATE OR REPLACE TRIGGER clinical_history_revisions_append_only BEFORE UPDATE OR DELETE ON clinical_history_revisions
     FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
 `;
