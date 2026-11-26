@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ClinicBrand } from "@/app/components/clinic-brand";
 import { PublicIcon } from "@/app/components/public-icon";
-import { whatsappUrl } from "@/app/public-content";
 import styles from "../landing.module.css";
 
 const navLinks = [
@@ -144,15 +144,13 @@ export function SiteNavbar() {
           </nav>
 
           <div className={styles.headerActions}>
-            <a
-              href={whatsappUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/reservar"
               className={styles.headerAction}
             >
-              <PublicIcon name="whatsapp" />
-              <span>AGENDA TU CITA</span>
-            </a>
+              <PublicIcon name="calendar" />
+              <span>Agenda tu cita</span>
+            </Link>
 
             <button
               type="button"

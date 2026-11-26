@@ -21,7 +21,13 @@ const merriweather = Merriweather({
 export const metadata: Metadata = {
   title: { default: `${clinic.name} · ${clinic.descriptor}`, template: `%s · ${clinic.name}` },
   description: `${clinic.name} ${clinic.descriptor} - ${clinic.valueProposition}`,
-  icons: { icon: { url: "/identidad/marca.svg", type: "image/svg+xml", sizes: "any" } },
+  icons: {
+    icon: [
+      { url: "/identidad/logo.png", type: "image/png", sizes: "192x192" },
+      { url: "/identidad/logo-96.webp", type: "image/webp", sizes: "96x96" },
+    ],
+    apple: [{ url: "/identidad/logo.png", sizes: "192x192", type: "image/png" }],
+  },
   robots: {
     index: false,
     follow: false,

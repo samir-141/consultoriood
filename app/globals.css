@@ -166,7 +166,7 @@ summary {
 }
 
 .shell {
-  width: min(100% - 1.75rem, 80rem);
+  width: min(100% - clamp(1.75rem, 4vw, 3rem), 80rem);
   margin-inline: auto;
 }
 
@@ -175,29 +175,45 @@ summary {
   align-items: center;
   width: fit-content;
   min-width: 0;
-  gap: clamp(0.35rem, 1.2vw, 0.7rem);
+  gap: clamp(0.32rem, 1.2vw, 0.75rem);
   min-height: 2.75rem;
   text-decoration: none;
   color: var(--plum-deep);
 }
 
+.clinic-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.clinic-brand-mark--light {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.25);
+}
+
 .clinic-brand img {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
   flex: 0 0 auto;
 }
 
 @media (min-width: 480px) {
   .clinic-brand img {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
   }
 }
 
 @media (min-width: 768px) {
   .clinic-brand img {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
   }
 }
 

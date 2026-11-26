@@ -10,11 +10,19 @@ export function ClinicBrand({
   variant?: "default" | "light";
 }) {
   const isLight = variant === "light";
-  const src = isLight ? "/identidad/marca-blanca.svg" : "/identidad/marca.svg";
 
   return (
     <Link href={href} className={`clinic-brand ${isLight ? "clinic-brand--light" : ""}`}>
-      <Image src={src} width={48} height={48} alt="" unoptimized />
+      <span className={`clinic-brand-mark ${isLight ? "clinic-brand-mark--light" : ""}`}>
+        <Image
+          src="/identidad/logo.webp"
+          width={48}
+          height={48}
+          alt=""
+          priority={!isLight}
+          unoptimized
+        />
+      </span>
       <span className="clinic-brand-copy">
         <strong translate="no" style={isLight ? { color: "#FFFFFF" } : undefined}>
           {clinic.name}
