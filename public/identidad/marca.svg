@@ -1,7 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="63 45 166 166" role="img" aria-labelledby="marca-title">
-  <title id="marca-title">Emblema de GOMEZ DELGADO DENTAL</title>
-  <path d="M 120 70 C 105 70 95 82 92 102 C 88 128 98 152 106 178 C 108 184 114 186 118 180 C 124 170 128 158 132 148 C 136 142 144 142 148 148 C 152 158 156 170 162 180 C 166 186 172 184 174 178 C 182 152 192 128 188 102 C 185 82 175 70 160 70 C 150 70 144 78 140 78 C 136 78 130 70 120 70 Z" fill="#0066b2"/>
-  <path d="M 120 74 C 110 74 102 83 100 98 C 108 102 122 106 140 106 C 158 106 172 102 180 98 C 178 83 170 74 160 74 C 152 74 146 80 140 80 C 134 80 128 74 120 74 Z" fill="#e0f2fe" fill-opacity="0.85"/>
-  <path d="M 76 132 C 70 136 72 144 80 146 C 106 154 136 156 168 144 C 196 134 212 118 218 98 C 220 90 214 86 208 90 C 196 98 182 104 164 108 C 134 114 104 112 76 132 Z" fill="#0284c7"/>
-  <path d="M 166 84 Q 166 90 172 90 Q 166 90 166 96 Q 166 90 160 90 Q 166 90 166 84 Z" fill="#ffffff"/>
+  <title id="marca-title">Emblema de Gómez Delgado Clínica Dental</title>
+  <defs>
+    <linearGradient id="tooth-lilac" x1="100" y1="68" x2="180" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DFC4E4" />
+      <stop offset="100%" stop-color="#B983BE" />
+    </linearGradient>
+    <linearGradient id="tooth-plum" x1="90" y1="100" x2="195" y2="185" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8A2B8F" />
+      <stop offset="100%" stop-color="#6A1C6E" />
+    </linearGradient>
+  </defs>
+  <path d="M 120 70 C 105 70 95 82 92 102 C 88 128 98 152 106 178 C 108 184 114 186 118 180 C 124 170 128 158 132 148 C 136 142 144 142 148 148 C 152 158 156 170 162 180 C 166 186 172 184 174 178 C 182 152 192 128 188 102 C 185 82 175 70 160 70 C 150 70 144 78 140 78 C 136 78 130 70 120 70 Z" fill="url(#tooth-plum)"/>
+  <path d="M 120 72 C 107 72 97 82 94 102 C 92 114 94 126 98 138 C 126 142 156 134 184 114 C 186 110 187 106 186 102 C 183 82 173 72 160 72 C 151 72 145 79 140 79 C 135 79 129 72 120 72 Z" fill="url(#tooth-lilac)"/>
+  <path d="M 76 132 C 70 136 72 144 80 146 C 106 154 136 156 168 144 C 196 134 212 118 218 98 C 220 90 214 86 208 90 C 196 98 182 104 164 108 C 134 114 104 112 76 132 Z" fill="#7B247F"/>
+  <path d="M 76 132 C 70 136 72 144 80 146 C 100 152 122 154 146 150 C 124 144 102 134 88 122 C 84 125 80 129 76 132 Z" fill="#B983BE"/>
+  <path d="M 166 84 Q 166 90 172 90 Q 166 90 166 96 Q 166 90 160 90 Q 166 90 166 84 Z" fill="#FFFFFF" opacity="0.92"/>
 </svg>
