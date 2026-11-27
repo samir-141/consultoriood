@@ -51,7 +51,7 @@ export type Appointment = Slot & {
 export type Hold = {
   appointment: Appointment;
   token: string;
-  expiresAt: string;
+  expiresAt: string | null;
 };
 
 export class BookingError extends Error {

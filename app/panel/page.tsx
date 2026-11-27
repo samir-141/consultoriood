@@ -26,7 +26,7 @@ function whatsappConfirmHref(appointment: Appointment) {
   const digits = (appointment.patientPhone ?? "").replace(/\D/g, "");
   if (!digits) return null;
   const intl = digits.length === 9 && digits.startsWith("9") ? `51${digits}` : digits;
-  const msg = `Hola ${appointment.patientName}, te escribimos de Gómez Delgado Clínica Dental para recordar tu cita de hoy a las ${appointment.time} (${appointment.serviceName}). ¿Nos confirmas si podrás asistir?`;
+  const msg = `Hola ${appointment.patientName}, te escribimos de Gómez Delgado Clínica Dental para recordarte tu cita de hoy (${dateLabel(appointment.date, true)}) a las ${appointment.time} (${appointment.serviceName} con ${appointment.professionalName}). ¿Nos confirmas tu asistencia? Si necesitas reprogramar o cancelar, por favor avísanos por este medio.`;
   return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -59,6 +59,7 @@ export default function StaffDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [clock, setClock] = useState(() => Date.now());
 
@@ -111,6 +112,26 @@ export default function StaffDashboard() {
     try {
       await postJson("/api/panel/agenda", { action: "status", appointmentId, status });
       setNotice(msg);
+      setAttempt((v) => v + 1);
+    } catch (problem) {
+      setError(errorMessage(problem));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function cancelFromReminder(appointmentId: string) {
+    setBusyId(appointmentId);
+    setNotice("");
+    setError("");
+    try {
+      await postJson("/api/panel/agenda", {
+        action: "cancel",
+        appointmentId,
+        reason: "Cancelado al confirmar asistencia 30 min antes",
+      });
+      setConfirmCancelId(null);
+      setNotice("Cita cancelada y horario liberado.");
       setAttempt((v) => v + 1);
     } catch (problem) {
       setError(errorMessage(problem));
@@ -195,7 +216,27 @@ export default function StaffDashboard() {
                         </p>
                       </div>
                       {appt.reminder30mSentAt ? (
-                        <span className={styles.reminderDoneBadge}>✓ Confirmado por asistente</span>
+                        <span className={styles.reminderDoneBadge}>✓ Recordatorio enviado / Asistencia confirmada</span>
+                      ) : confirmCancelId === appt.id ? (
+                        <div className={styles.actions}>
+                          <span className={styles.muted}>¿Liberar horario?</span>
+                          <button
+                            type="button"
+                            className={styles.primary}
+                            disabled={busyId === appt.id}
+                            onClick={() => void cancelFromReminder(appt.id)}
+                          >
+                            {busyId === appt.id ? "Cancelando…" : "Sí, cancelar"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.secondary}
+                            disabled={busyId === appt.id}
+                            onClick={() => setConfirmCancelId(null)}
+                          >
+                            Volver
+                          </button>
+                        </div>
                       ) : (
                         <div className={styles.actions}>
                           {phoneUrl && (
@@ -210,7 +251,7 @@ export default function StaffDashboard() {
                               rel="noopener noreferrer"
                               className={styles.secondary}
                             >
-                              Escribir por WhatsApp
+                              Enviar recordatorio WhatsApp
                             </a>
                           )}
                           <button
@@ -220,6 +261,14 @@ export default function StaffDashboard() {
                             onClick={() => void markReminderSent(appt.id)}
                           >
                             {busyId === appt.id ? "Guardando…" : "Marcar recordatorio enviado"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.miniBtn}
+                            disabled={busyId === appt.id}
+                            onClick={() => setConfirmCancelId(appt.id)}
+                          >
+                            No asistirá / Cancelar
                           </button>
                         </div>
                       )}

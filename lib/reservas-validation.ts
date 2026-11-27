@@ -34,6 +34,7 @@ export const ReservasCreateSchema = z.object({
   reason: z.string().trim().max(500).refine(noNullByte, "Revisa el motivo.").optional(),
   motivo: z.string().trim().max(500).refine(noNullByte, "Revisa el motivo.").optional(),
   whatsappOptIn: z.boolean().optional(),
+  confirmNow: z.boolean().optional(),
 }).refine(data => Boolean(data.date || data.fecha), {
   message: "La fecha es obligatoria (formato YYYY-MM-DD).",
   path: ["fecha"],
@@ -59,6 +60,7 @@ export type NormalizedBookingInput = {
   email?: string | null;
   reason?: string | null;
   whatsappOptIn: boolean;
+  confirmNow: boolean;
 };
 
 export function validateReservasQuery(searchParams: URLSearchParams) {
@@ -113,6 +115,7 @@ export function validateReservasCreate(body: unknown): NormalizedBookingInput {
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
   const reason = d.reason || d.motivo || null;
   const whatsappOptIn = d.whatsappOptIn === true;
+  const confirmNow = d.confirmNow === true;
 
   return {
     date,
@@ -125,5 +128,6 @@ export function validateReservasCreate(body: unknown): NormalizedBookingInput {
     email,
     reason,
     whatsappOptIn,
+    confirmNow,
   };
 }

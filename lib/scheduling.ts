@@ -754,13 +754,14 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
     throw new HttpError(400, "La referencia de la reserva no es válida.");
   }
   const key = idempotencyKey?.toLowerCase();
+  const confirmNow = input.confirmNow === true;
   // Keep the request fingerprint independent of later edits to the patient's contact details.
   const patientId = key
     ? "hold-" + await bookingToken("idempotency:" + key)
     : randomUUID();
   const token = await bookingToken(patientId);
   const requestHash = key
-    ? await bookingToken("hold-input:" + JSON.stringify([key, service.id, date, time, preference, patient, optIn]))
+    ? await bookingToken("hold-input:" + JSON.stringify([key, service.id, date, time, preference, patient, optIn, confirmNow]))
     : null;
   const hash = digest(token);
   return writeSchedule(async (sql, now) => {
@@ -768,23 +769,40 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
       const { rows } = await sql.query<Appointment>(rowColumns + " WHERE a.manage_hash=$1", [hash]);
       const prior = rows[0];
       if (prior) {
-        if (prior.holdRequestHash === requestHash && prior.expiresAt && (prior.status === "PENDING" || prior.status === "CONFIRMED")) {
+        if (prior.holdRequestHash === requestHash && (prior.status === "CONFIRMED" || (prior.status === "PENDING" && prior.expiresAt))) {
           ensureActiveLink(prior, now);
-          return { appointment: asPublic(prior), token, expiresAt: prior.expiresAt };
+          return { appointment: asPublic(prior), token, expiresAt: prior.status === "PENDING" ? prior.expiresAt : null };
         }
         throw new HttpError(409, "La referencia corresponde a otra reserva o a un turno que ya terminó.");
       }
     }
     const timing = await chooseSlot(sql, input, service, now);
-    const expiresAt = new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
+    const expiresAt = confirmNow
+      ? undefined
+      : new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
     await sql.query("INSERT INTO patients (id,name,phone,email,dni) VALUES ($1,$2,$3,$4,$5)", [
       patientId, patient.name, patient.phone, patient.email, dni,
     ]);
     const appointment = await insertAppointment(sql, {
-      patientId, service, timing, expiresAt, hash, requestHash, optIn, status: "PENDING", dni, reason,
+      patientId,
+      service,
+      timing,
+      expiresAt,
+      hash,
+      requestHash,
+      optIn,
+      status: confirmNow ? "CONFIRMED" : "PENDING",
+      dni,
+      reason,
     });
-    await record(sql, appointment.id, null, "PENDING");
-    return { appointment: asPublic(appointment), token, expiresAt };
+    if (confirmNow) {
+      await assign(sql, appointment);
+      await record(sql, appointment.id, null, "CONFIRMED");
+      await notifications(sql, appointment, now);
+    } else {
+      await record(sql, appointment.id, null, "PENDING");
+    }
+    return { appointment: asPublic(appointment), token, expiresAt: expiresAt ?? null };
   });
 }
 

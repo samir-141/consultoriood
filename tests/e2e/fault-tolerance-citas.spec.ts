@@ -57,8 +57,10 @@ test.describe("Intentos de fallo, vulnerabilidades y robustez en flujo de citas"
     await page.locator("#patient-reason").fill(xssPayload);
     await page.getByRole("button", { name: /confirmar reserva/i }).click();
 
-    await expect(page.locator("h1")).toContainText("¡Tu turno ha sido reservado!", { timeout: 10000 });
-    await expect(page.locator("text=Pendiente de confirmación (retenido 10 min)")).toBeVisible();
+    await expect(page.locator("h1")).toContainText("¡Tu cita ha sido confirmada!", { timeout: 10000 });
+    await expect(page.locator("dd", { hasText: /^Confirmada$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Confirmar cita ahora/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Copiar enlace de mi cita/i })).toBeVisible();
     const xssExecuted = await page.evaluate(() => Boolean((window as unknown as { __xss?: boolean }).__xss));
     expect(xssExecuted).toBe(false);
     expect(consoleErrors).toEqual([]);

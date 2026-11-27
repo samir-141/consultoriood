@@ -146,6 +146,7 @@ export default function BookingFlow({
   // Cita creada
   const [hold, setHold] = useState<Hold | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -156,7 +157,7 @@ export default function BookingFlow({
   const currentService = catalog.services.find((s) => s.id === serviceId) ?? catalog.services[0];
   const assignedDoctor = catalog.professionals.find((p) => p.id === professionalId) ?? catalog.professionals[0];
 
-  const remaining = useHoldClock(step === 3 && hold?.appointment?.status === "PENDING" ? hold?.expiresAt : undefined);
+  const remaining = useHoldClock(step === 3 && hold?.appointment?.status === "PENDING" ? (hold?.expiresAt ?? undefined) : undefined);
 
   // Focus accesible al cambiar de paso principal
   useEffect(() => {
@@ -240,6 +241,7 @@ export default function BookingFlow({
         email: patient.email.trim() || undefined,
         reason: patient.reason.trim() || undefined,
         whatsappOptIn: patient.whatsappOptIn,
+        confirmNow: true,
       };
 
       const payload = JSON.stringify(data);
@@ -750,8 +752,8 @@ export default function BookingFlow({
               </div>
 
               <div className={styles.assistantReminderNotice}>
-                <strong>Confirmación previa del asistente (30 min antes):</strong>{" "}
-                el sistema recordará a nuestro asistente encargado llamarte o escribirte por WhatsApp 30 minutos antes de tu cita para confirmar si podrás asistir.
+                <strong>Recordatorio de la clínica (30 min antes):</strong>{" "}
+                nuestra recepcionista se comunicará contigo por llamada o WhatsApp 30 minutos antes de tu cita para recordarte el horario y confirmar tu asistencia.
               </div>
 
               <div className={styles.checkboxField}>
@@ -762,7 +764,7 @@ export default function BookingFlow({
                     onChange={(e) => setPatient({ ...patient, whatsappOptIn: e.target.checked })}
                     className={styles.checkboxInput}
                   />
-                  <span>Autorizo que el asistente de la clínica me llame o escriba por WhatsApp 30 minutos antes para confirmar asistencia</span>
+                  <span>Autorizo que recepción me envíe recordatorios y confirmación por WhatsApp</span>
                 </label>
               </div>
 
@@ -803,7 +805,7 @@ export default function BookingFlow({
                     </h1>
                     <p className={styles.stepSubtitle}>
                       {isConfirmed
-                        ? "Te esperamos en el consultorio. Guarda los detalles de tu turno."
+                        ? "Te esperamos en el consultorio. Recepción te enviará un recordatorio de confirmación 30 minutos antes."
                         : "Tu horario se encuentra retenido. Confirma tu cita para asegurar tu atención."}
                     </p>
                   </div>
@@ -879,12 +881,25 @@ export default function BookingFlow({
                     </a>
 
                     {hold?.token && (
-                      <Link
-                        href={`/mi-cita/${hold.token}`}
-                        className={styles.manageAppointmentLink}
-                      >
-                        Gestionar o reprogramar mi cita
-                      </Link>
+                      <>
+                        <button
+                          type="button"
+                          className="button-secondary"
+                          onClick={async () => {
+                            const fullUrl = `${window.location.origin}/mi-cita/${hold.token}`;
+                            await navigator.clipboard?.writeText(fullUrl).catch(() => undefined);
+                            setCopiedLink(true);
+                          }}
+                        >
+                          {copiedLink ? "✓ Enlace copiado" : "Copiar enlace de mi cita"}
+                        </button>
+                        <Link
+                          href={`/mi-cita/${hold.token}`}
+                          className={styles.manageAppointmentLink}
+                        >
+                          Gestionar o reprogramar mi cita
+                        </Link>
+                      </>
                     )}
 
                     <Link href="/" className={styles.returnHomeLink}>
