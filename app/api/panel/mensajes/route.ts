@@ -34,12 +34,18 @@ export function POST(request: Request) {
   return api(async () => {
     await requireUser(request, ["ADMIN", "RECEPCION"]);
     const { id } = await readJson(request);
-    const { rows } = await (await getDb()).query(`
+    const jobId = field(id, "mensaje", 80);
+    const db = await getDb();
+    const { rows } = await db.query(`
       UPDATE whatsapp_jobs SET status='SIMULADO'
        WHERE id=$1 AND status='PENDIENTE' AND available_at <= now()
        RETURNING id
-    `, [field(id, "mensaje", 80)]);
-    if (!rows.length) throw new HttpError(409, "El mensaje ya fue procesado o aún no está listo.");
+    `, [jobId]);
+    if (!rows.length) {
+      const existing = await db.query("SELECT 1 FROM whatsapp_jobs WHERE id=$1", [jobId]);
+      if (!existing.rows.length) throw new HttpError(404, "No se encontró el mensaje solicitado.");
+      throw new HttpError(409, "El mensaje ya fue procesado o aún no está listo.");
+    }
     return Response.json({ ok: true });
   });
 }

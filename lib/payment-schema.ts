@@ -36,4 +36,10 @@ export const paymentSchema = `
   );
   CREATE OR REPLACE TRIGGER manual_payment_events_append_only BEFORE UPDATE OR DELETE ON manual_payment_events
     FOR EACH ROW EXECUTE FUNCTION reject_clinical_history_change();
+
+  CREATE INDEX IF NOT EXISTS manual_payments_appt_all_idx ON manual_payments (appointment_id) WHERE appointment_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS manual_payments_plan_all_idx ON manual_payments (plan_id) WHERE plan_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS manual_payments_entered_by_idx ON manual_payments (entered_by);
+  CREATE INDEX IF NOT EXISTS manual_payments_created_idx ON manual_payments (created_at DESC, id DESC);
+  CREATE INDEX IF NOT EXISTS manual_payment_events_actor_idx ON manual_payment_events (actor_id);
 `;

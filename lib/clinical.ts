@@ -88,34 +88,43 @@ async function withClinicalRecord<T>(
   work: (tx: Transaction, user: Staff, patient: Patient, input: T) => Promise<ClinicalResult>,
   resourceId: string | null = null,
 ) {
-  const patientId = requiredId(id, "el paciente");
   let actorId: string | null = null;
+  let patientId: string | null = null;
+  let patientExists = false;
   try {
     const user = await requireUser(request);
     actorId = user.id;
     if (user.role !== "ADMIN" && user.role !== "ODONTOLOGO") {
       throw new HttpError(403, "Tu rol no tiene acceso a la ficha clínica.");
     }
+    patientId = requiredId(id, "el paciente");
     const db = await getDb();
     await ensureHistorySchema(db);
-    if (prepare !== noBody) await requireAssignment(db, user, patientId);
+    if (prepare !== noBody) {
+      const existsPre = await db.query("SELECT 1 FROM patients WHERE id = $1", [patientId]);
+      if (!existsPre.rows.length) throw new HttpError(404, "No se encontró al paciente.");
+      patientExists = true;
+      await requireAssignment(db, user, patientId);
+    }
     const input = await prepare();
     return await db.transaction(async (tx) => {
-      await requireAssignment(tx, user, patientId, true);
       const { rows } = await tx.query<Patient>(`
         SELECT id, name, phone, email, dni, birth_date::text AS "birthDate", background
         FROM patients WHERE id = $1
       `, [patientId]);
       const patient = rows[0];
       if (!patient) throw new HttpError(404, "No se encontró al paciente.");
+      patientExists = true;
+      await requireAssignment(tx, user, patientId!, true);
       const result = await work(tx, user, patient, input);
-      await recordAudit(tx, actorId, patientId, action, "OK", result.resourceId ?? resourceId);
+      await recordAudit(tx, actorId, patientId!, action, "OK", result.resourceId ?? resourceId);
       return result.response;
     });
   } catch (error) {
-    if (actorId) {
+    if (actorId && patientId && patientExists) {
       const denial = error instanceof HttpError && error.status === 403;
-      await recordAudit(await getDb(), actorId, patientId, action, denial ? "DENIED" : "ERROR", resourceId);
+      await recordAudit(await getDb(), actorId, patientId, action, denial ? "DENIED" : "ERROR", resourceId)
+        .catch(() => undefined);
     }
     throw error;
   }
@@ -363,12 +372,12 @@ export async function uploadClinicalAttachment(request: Request, id: string) {
 }
 
 export async function downloadClinicalAttachment(request: Request, id: string, value: string) {
-  const attachmentId = requiredId(value, "el adjunto");
   return withClinicalRecord(request, id, "DOWNLOAD_ATTACHMENT", noBody, async (tx, _user, patient) => {
+    const attachmentId = requiredId(value, "el adjunto");
     const { rows } = await tx.query<PrivateFile>(`
       SELECT name, mime, content FROM clinical_attachments WHERE id = $1 AND patient_id = $2
     `, [attachmentId, patient.id]);
     if (!rows[0]) throw new HttpError(404, "No se encontró el adjunto.");
     return { response: privateDownload(rows[0]), resourceId: attachmentId };
-  }, attachmentId);
+  });
 }

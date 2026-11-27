@@ -26,7 +26,7 @@ function whatsappConfirmHref(appointment: Appointment) {
   const digits = (appointment.patientPhone ?? "").replace(/\D/g, "");
   if (!digits) return null;
   const intl = digits.length === 9 && digits.startsWith("9") ? `51${digits}` : digits;
-  const msg = `Hola ${appointment.patientName}, te escribimos de Gómez Delgado Clínica Dental para recordar tu cita de hoy a las ${appointment.time} (${appointment.serviceName}). ¿Nos confirmas si podrás asistir?`;
+  const msg = `Hola ${appointment.patientName}, te escribimos de Gómez Delgado Clínica Dental para recordarte tu cita de hoy (${dateLabel(appointment.date, true)}) a las ${appointment.time} (${appointment.serviceName} con ${appointment.professionalName}). ¿Nos confirmas tu asistencia? Si necesitas reprogramar o cancelar, por favor avísanos por este medio.`;
   return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -59,6 +59,7 @@ export default function StaffDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [clock, setClock] = useState(() => Date.now());
 
@@ -111,6 +112,26 @@ export default function StaffDashboard() {
     try {
       await postJson("/api/panel/agenda", { action: "status", appointmentId, status });
       setNotice(msg);
+      setAttempt((v) => v + 1);
+    } catch (problem) {
+      setError(errorMessage(problem));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function cancelFromReminder(appointmentId: string) {
+    setBusyId(appointmentId);
+    setNotice("");
+    setError("");
+    try {
+      await postJson("/api/panel/agenda", {
+        action: "cancel",
+        appointmentId,
+        reason: "Cancelado al confirmar asistencia 30 min antes",
+      });
+      setConfirmCancelId(null);
+      setNotice("Cita cancelada y horario liberado.");
       setAttempt((v) => v + 1);
     } catch (problem) {
       setError(errorMessage(problem));
@@ -195,7 +216,27 @@ export default function StaffDashboard() {
                         </p>
                       </div>
                       {appt.reminder30mSentAt ? (
-                        <span className={styles.reminderDoneBadge}>✓ Confirmado por asistente</span>
+                        <span className={styles.reminderDoneBadge}>✓ Recordatorio enviado / Asistencia confirmada</span>
+                      ) : confirmCancelId === appt.id ? (
+                        <div className={styles.actions}>
+                          <span className={styles.muted}>¿Liberar horario?</span>
+                          <button
+                            type="button"
+                            className={styles.primary}
+                            disabled={busyId === appt.id}
+                            onClick={() => void cancelFromReminder(appt.id)}
+                          >
+                            {busyId === appt.id ? "Cancelando…" : "Sí, cancelar"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.secondary}
+                            disabled={busyId === appt.id}
+                            onClick={() => setConfirmCancelId(null)}
+                          >
+                            Volver
+                          </button>
+                        </div>
                       ) : (
                         <div className={styles.actions}>
                           {phoneUrl && (
@@ -210,7 +251,7 @@ export default function StaffDashboard() {
                               rel="noopener noreferrer"
                               className={styles.secondary}
                             >
-                              Escribir por WhatsApp
+                              Enviar recordatorio WhatsApp
                             </a>
                           )}
                           <button
@@ -220,6 +261,14 @@ export default function StaffDashboard() {
                             onClick={() => void markReminderSent(appt.id)}
                           >
                             {busyId === appt.id ? "Guardando…" : "Marcar recordatorio enviado"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.miniBtn}
+                            disabled={busyId === appt.id}
+                            onClick={() => setConfirmCancelId(appt.id)}
+                          >
+                            No asistirá / Cancelar
                           </button>
                         </div>
                       )}
@@ -276,7 +325,7 @@ export default function StaffDashboard() {
                           En sede
                         </button>
                       )}
-                      {staff.role !== "RECEPCION" && (
+                      {staff.role !== "RECEPCION" && (staff.role === "ADMIN" || appointment.patientAssigned !== false) && (
                         <Link className={styles.miniBtn} href={`/panel/clinica?paciente=${encodeURIComponent(appointment.patientId)}`}>
                           Ficha
                         </Link>
@@ -344,18 +393,28 @@ export default function StaffDashboard() {
                   <span className={styles.orderBadge}>{appt.time}</span>
                   <div className={styles.eventTitle}>
                     <strong>{appt.patientName}</strong>
-                    <small>{appt.serviceName}{appt.patientPhone ? ` · ${appt.patientPhone}` : ""}</small>
+                    <small>
+                      {appt.serviceName} · {appt.professionalName}
+                      {appt.patientPhone ? ` · ${appt.patientPhone}` : ""}
+                    </small>
                   </div>
                   <div className={styles.actions}>
                     <span className={styles.pill} data-status={appt.status}>{statusLabels[appt.status]}</span>
-                    <Link
-                      className={styles.miniBtn}
-                      href={staff.role !== "RECEPCION"
-                        ? `/panel/clinica?paciente=${encodeURIComponent(appt.patientId)}`
-                        : `/panel/pacientes?paciente=${encodeURIComponent(appt.patientId)}`}
-                    >
-                      Abrir
-                    </Link>
+                    {(staff.role === "ADMIN" || (staff.role === "ODONTOLOGO" && appt.patientAssigned !== false)) ? (
+                      <Link
+                        className={styles.miniBtn}
+                        href={`/panel/clinica?paciente=${encodeURIComponent(appt.patientId)}`}
+                      >
+                        Abrir
+                      </Link>
+                    ) : (
+                      <Link
+                        className={styles.miniBtn}
+                        href={`/panel/pacientes?paciente=${encodeURIComponent(appt.patientId)}`}
+                      >
+                        Ver
+                      </Link>
+                    )}
                   </div>
                 </li>
               ))}
@@ -438,6 +497,13 @@ export default function StaffDashboard() {
           </section>
         ) : null}
 
+        {staff.role !== "ODONTOLOGO" && (
+          <section className={`${styles.card} ${styles.stack}`}>
+            <h2>Citas y doctores</h2>
+            <p className={styles.muted}>Tabla unificada de citas, pacientes y odontólogos asignados.</p>
+            <Link className={styles.shortcutLink} href="/panel/citas">Abrir tabla de citas</Link>
+          </section>
+        )}
         {staff.role !== "ODONTOLOGO" && (
           <section className={`${styles.card} ${styles.stack}`}>
             <h2>Pagos</h2>

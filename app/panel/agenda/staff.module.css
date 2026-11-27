@@ -348,6 +348,158 @@
   font-weight: 600;
 }
 
+/* Tabla responsiva Admin/Recepción siguiendo modern-web-guidance (responsive-table + single-line-overflow) */
+.tableWrapper {
+  overflow: auto;
+  max-inline-size: 100%;
+  max-block-size: min(580px, 76vh);
+  container-type: inline-size;
+  border: 1px solid var(--staff-line);
+  border-radius: .85rem;
+  background: #fff;
+}
+
+.responsiveTable {
+  inline-size: 100%;
+  min-inline-size: 56rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: .9rem;
+  --col-1: "Paciente";
+  --col-2: "Fecha y hora";
+  --col-3: "Tratamiento";
+  --col-4: "Estado";
+  --col-5: "Doctor de la cita";
+  --col-6: "Cargo clínico";
+  --col-7: "Acciones";
+}
+
+.responsiveTable caption {
+  text-align: left;
+  padding: .85rem 1rem .6rem;
+  font-weight: 700;
+  color: var(--plum-deep, #3b1143);
+  border-bottom: 1px solid var(--staff-line);
+}
+
+.responsiveTable thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: var(--staff-mint);
+}
+
+.responsiveTable thead th {
+  text-align: left;
+  padding: .65rem .75rem;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--plum-deep, #3b1143);
+  border-bottom: 1px solid var(--lilac-border, #e2cce5);
+  white-space: nowrap;
+}
+
+.responsiveTable tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: #fff;
+  text-align: left;
+  font-weight: 650;
+  vertical-align: top;
+}
+
+.responsiveTable tbody th,
+.responsiveTable tbody td {
+  padding: .7rem .75rem;
+  border-bottom: 1px solid var(--staff-line);
+  vertical-align: top;
+}
+
+.responsiveTable tbody tr:hover th,
+.responsiveTable tbody tr:hover td {
+  background: #fbf7fc;
+}
+
+.singleLine {
+  display: block;
+  min-inline-size: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unassignedTag {
+  display: inline-flex;
+  align-items: center;
+  padding: .18rem .52rem;
+  border-radius: 9999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: .76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.assignedTag {
+  display: inline-flex;
+  align-items: center;
+  padding: .18rem .52rem;
+  border-radius: 9999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: .76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@container (width < 720px) {
+  .responsiveTable,
+  .responsiveTable thead,
+  .responsiveTable tbody,
+  .responsiveTable tr,
+  .responsiveTable th,
+  .responsiveTable td {
+    display: block;
+    min-inline-size: 0;
+  }
+
+  .responsiveTable thead {
+    display: none;
+  }
+
+  .responsiveTable tr {
+    margin: .75rem;
+    border: 1px solid var(--lilac-border, #e2cce5);
+    border-radius: .75rem;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .responsiveTable tbody th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--staff-mint);
+    border-bottom: 1px solid var(--lilac-border, #e2cce5);
+  }
+
+  .responsiveTable tbody td {
+    display: grid;
+    gap: .2rem;
+    border-bottom: 1px solid var(--staff-line);
+  }
+
+  .responsiveTable tbody td:nth-child(2)::before { content: var(--col-2) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+  .responsiveTable tbody td:nth-child(3)::before { content: var(--col-3) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+  .responsiveTable tbody td:nth-child(4)::before { content: var(--col-4) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+  .responsiveTable tbody td:nth-child(5)::before { content: var(--col-5) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+  .responsiveTable tbody td:nth-child(6)::before { content: var(--col-6) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+  .responsiveTable tbody td:nth-child(7)::before { content: var(--col-7) ": "; font-size: .75rem; font-weight: 700; color: var(--staff-muted); }
+}
+
 @media (max-width: 52rem) {
   .shortcuts { grid-template-columns: minmax(0, 1fr); }
   .stickyCanvas { position: static; }

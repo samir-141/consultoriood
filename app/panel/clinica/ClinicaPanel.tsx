@@ -101,7 +101,14 @@ export default function ClinicaPanel({
       .catch((reason: unknown) => {
         if (controller.signal.aborted) return;
         setRecord(null);
-        setError(errorMessage(reason));
+        setPatientId("");
+        setPatientQuery("");
+        const msg = errorMessage(reason);
+        setError(
+          msg.includes("asignado")
+            ? "Este paciente aún no está asignado a tu atención (por ejemplo, cita pendiente sin confirmar o de otro profesional)."
+            : msg,
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -198,8 +205,8 @@ export default function ClinicaPanel({
       </section>
 
       <div className={`${styles.statusStack} ${styles.noPrint}`}>
-        <p className={styles.notice} role="status">{message}</p>
-        <p className={styles.error} role="alert">{error}</p>
+        {message ? <p className={styles.notice} role="status">{message}</p> : null}
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
         {loading ? <p className={styles.hint} role="status">Cargando expediente…</p> : null}
       </div>
 

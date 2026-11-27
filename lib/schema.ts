@@ -67,4 +67,18 @@ export const baseSchema = `
       CHECK (status IN ('PENDIENTE','CANCELADO','SIMULADO')), available_at timestamptz NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(), UNIQUE (appointment_id, kind)
   );
+
+  CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
+  CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions (expires_at);
+  CREATE INDEX IF NOT EXISTS patients_dni_idx ON patients (dni) WHERE dni IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS patients_phone_idx ON patients (phone);
+  CREATE INDEX IF NOT EXISTS patients_name_id_idx ON patients (name, id);
+  CREATE INDEX IF NOT EXISTS patient_assignments_prof_patient_idx ON patient_assignments (professional_id, patient_id);
+  CREATE INDEX IF NOT EXISTS appointments_previous_id_idx ON appointments (previous_id) WHERE previous_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS appointments_prof_starts_idx ON appointments (professional_id, starts_at);
+  CREATE INDEX IF NOT EXISTS appointments_pending_hold_idx ON appointments (hold_expires_at, starts_at) WHERE status = 'PENDING';
+  CREATE INDEX IF NOT EXISTS agenda_blocks_starts_prof_idx ON agenda_blocks (starts_at, professional_id);
+  CREATE INDEX IF NOT EXISTS appointment_events_appt_idx ON appointment_events (appointment_id, created_at);
+  CREATE INDEX IF NOT EXISTS appointment_events_actor_idx ON appointment_events (actor_id) WHERE actor_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS whatsapp_jobs_status_avail_idx ON whatsapp_jobs (status, available_at DESC);
 `;

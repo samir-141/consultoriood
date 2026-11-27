@@ -1,36 +1,40 @@
 import { z } from "zod";
+import { validDate } from "./clinic-time";
 import { HttpError } from "./http";
 
+const noNullByte = (value: string) => !value.includes("\0");
+
 export const ReservasQuerySchema = z.object({
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD").optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD").optional(),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD").refine(validDate, "Ingresa una fecha válida.").optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD").refine(validDate, "Ingresa una fecha válida.").optional(),
   mes: z.string().regex(/^\d{4}-\d{2}$/, "El mes debe tener el formato YYYY-MM").optional(),
   month: z.string().regex(/^\d{4}-\d{2}$/, "El mes debe tener el formato YYYY-MM").optional(),
-  servicio: z.string().optional(),
-  serviceId: z.string().optional(),
-  profesional: z.string().optional(),
-  professionalId: z.string().optional(),
+  servicio: z.string().max(80).optional(),
+  serviceId: z.string().max(80).optional(),
+  profesional: z.string().max(80).optional(),
+  professionalId: z.string().max(80).optional(),
 });
 
 export const ReservasCreateSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha requerida con formato YYYY-MM-DD").optional(),
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha requerida con formato YYYY-MM-DD").optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha requerida con formato YYYY-MM-DD").refine(validDate, "Ingresa una fecha válida.").optional(),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha requerida con formato YYYY-MM-DD").refine(validDate, "Ingresa una fecha válida.").optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/, "Hora requerida con formato HH:MM").optional(),
   hora: z.string().regex(/^\d{2}:\d{2}$/, "Hora requerida con formato HH:MM").optional(),
-  serviceId: z.string().optional(),
-  servicio: z.string().optional(),
-  professionalId: z.string().optional(),
-  profesional: z.string().optional(),
-  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120).optional(),
-  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120).optional(),
-  phone: z.string().trim().min(6, "Ingresa un teléfono o DNI válido").max(30).optional(),
-  telefono: z.string().trim().min(6, "Ingresa un teléfono o DNI válido").max(30).optional(),
-  dni: z.string().trim().max(20).optional(),
-  email: z.union([z.string().trim().email("Ingresa un correo válido"), z.literal("")]).optional(),
-  correo: z.union([z.string().trim().email("Ingresa un correo válido"), z.literal("")]).optional(),
-  reason: z.string().trim().max(500).optional(),
-  motivo: z.string().trim().max(500).optional(),
+  serviceId: z.string().max(80).optional(),
+  servicio: z.string().max(80).optional(),
+  professionalId: z.string().max(80).optional(),
+  profesional: z.string().max(80).optional(),
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120).refine(noNullByte, "Revisa el nombre.").optional(),
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120).refine(noNullByte, "Revisa el nombre.").optional(),
+  phone: z.string().trim().min(7, "Ingresa un teléfono válido de 7 a 15 dígitos").max(30).refine(noNullByte, "Revisa el teléfono.").optional(),
+  telefono: z.string().trim().min(7, "Ingresa un teléfono válido de 7 a 15 dígitos").max(30).refine(noNullByte, "Revisa el teléfono.").optional(),
+  dni: z.string().trim().max(20).refine(noNullByte, "Revisa el DNI.").optional(),
+  email: z.union([z.string().trim().max(160).email("Ingresa un correo válido").refine(noNullByte, "Revisa el correo."), z.literal("")]).optional(),
+  correo: z.union([z.string().trim().max(160).email("Ingresa un correo válido").refine(noNullByte, "Revisa el correo."), z.literal("")]).optional(),
+  reason: z.string().trim().max(500).refine(noNullByte, "Revisa el motivo.").optional(),
+  motivo: z.string().trim().max(500).refine(noNullByte, "Revisa el motivo.").optional(),
   whatsappOptIn: z.boolean().optional(),
+  confirmNow: z.boolean().optional(),
 }).refine(data => Boolean(data.date || data.fecha), {
   message: "La fecha es obligatoria (formato YYYY-MM-DD).",
   path: ["fecha"],
@@ -40,8 +44,8 @@ export const ReservasCreateSchema = z.object({
 }).refine(data => Boolean(data.name || data.nombre), {
   message: "El nombre es obligatorio.",
   path: ["nombre"],
-}).refine(data => Boolean(data.phone || data.telefono || data.dni), {
-  message: "Ingresa un teléfono o DNI de contacto.",
+}).refine(data => Boolean(data.phone || data.telefono || (data.dni && /^\d{8}$/.test(data.dni))), {
+  message: "Ingresa un teléfono válido o DNI de 8 dígitos.",
   path: ["telefono"],
 });
 
@@ -56,6 +60,7 @@ export type NormalizedBookingInput = {
   email?: string | null;
   reason?: string | null;
   whatsappOptIn: boolean;
+  confirmNow: boolean;
 };
 
 export function validateReservasQuery(searchParams: URLSearchParams) {
@@ -78,11 +83,8 @@ export function validateReservasQuery(searchParams: URLSearchParams) {
 
   const date = parsed.data.fecha || parsed.data.date;
   const month = parsed.data.mes || parsed.data.month;
-  if (month) {
-    const mNum = Number(month.slice(5, 7));
-    if (mNum < 1 || mNum > 12) {
-      throw new HttpError(400, "El mes debe estar entre 01 y 12 (formato YYYY-MM).");
-    }
+  if (month && !validDate(`${month}-01`)) {
+    throw new HttpError(400, "El mes debe ser válido y tener formato YYYY-MM.");
   }
   const serviceId = parsed.data.servicio || parsed.data.serviceId || "evaluacion";
   const professionalId = parsed.data.profesional || parsed.data.professionalId || "any";
@@ -113,6 +115,7 @@ export function validateReservasCreate(body: unknown): NormalizedBookingInput {
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
   const reason = d.reason || d.motivo || null;
   const whatsappOptIn = d.whatsappOptIn === true;
+  const confirmNow = d.confirmNow === true;
 
   return {
     date,
@@ -125,5 +128,6 @@ export function validateReservasCreate(body: unknown): NormalizedBookingInput {
     email,
     reason,
     whatsappOptIn,
+    confirmNow,
   };
 }

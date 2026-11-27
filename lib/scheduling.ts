@@ -18,6 +18,7 @@ type Appointment = {
   startsAt: Date; endsAt: Date; occupiedUntil: Date; expiresAt: Date | null;
   manageHash: string | null; holdRequestHash: string | null; optIn: boolean;
   dni?: string | null; reason?: string | null; reminder30mSentAt?: Date | null;
+  patientAssigned?: boolean;
 };
 type Block = { id: string; professionalId: string; reason: string; startsAt: Date; endsAt: Date };
 type Slot = { date: string; time: string; professionalId: string; professionalName: string };
@@ -45,7 +46,11 @@ const rowColumns = `
     a.price_cents AS "priceCents", a.starts_at AS "startsAt", a.ends_at AS "endsAt",
     a.occupied_until AS "occupiedUntil", a.hold_expires_at AS "expiresAt",
     a.manage_hash AS "manageHash", a.hold_request_hash AS "holdRequestHash", a.opt_in AS "optIn",
-    a.dni AS "dni", a.reason AS "reason", a.reminder_30m_sent_at AS "reminder30mSentAt"
+    COALESCE(a.dni, p.dni) AS "dni", a.reason AS "reason", a.reminder_30m_sent_at AS "reminder30mSentAt",
+    EXISTS (
+      SELECT 1 FROM patient_assignments pa
+      WHERE pa.patient_id = a.patient_id AND pa.professional_id = a.professional_id
+    ) AS "patientAssigned"
     FROM appointments a JOIN patients p ON p.id = a.patient_id
 `;
 const activeCondition = `(status IN ('CONFIRMED','CHECKED_IN','IN_PROGRESS','COMPLETED')
@@ -188,14 +193,18 @@ function asAppointment(row: Appointment, now = new Date()) {
     status, priceCents: row.priceCents, expiresAt: status === "PENDING" ? deadline : null,
     dni: row.dni ?? null, reason: row.reason ?? null,
     reminder30mSentAt: row.reminder30mSentAt ?? null,
+    patientAssigned: row.patientAssigned ?? false,
   };
 }
 
 function asPublic(row: Appointment) {
-  const { patientId, patientPhone, reminder30mSentAt, ...appointment } = asAppointment(row);
+  const { patientId, patientPhone, reminder30mSentAt, patientAssigned, dni, reason, ...appointment } = asAppointment(row);
   void patientId;
   void patientPhone;
   void reminder30mSentAt;
+  void patientAssigned;
+  void dni;
+  void reason;
   return appointment;
 }
 
@@ -413,7 +422,7 @@ function buildDayIntervals(
           time,
           available: false,
           status: "blocked",
-          reason: blockHit.reason?.trim() || "Cirugía / Horario bloqueado",
+          reason: "Cirugía / Horario bloqueado",
           professionalId: null,
           professionalName: null,
         };
@@ -534,8 +543,8 @@ export async function monthlyReservasAvailability(search: URLSearchParams) {
   const monthParam = search.get("mes") ?? search.get("month") ?? today.slice(0, 7);
   const stepMinutes = schedule.displayStepMinutes;
 
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam)) {
-    throw new HttpError(400, "El mes debe tener el formato YYYY-MM.");
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam) || !validDate(`${monthParam}-01`)) {
+    throw new HttpError(400, "El mes debe ser válido y tener formato YYYY-MM.");
   }
 
   const year = Number(monthParam.slice(0, 4));
@@ -736,24 +745,23 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
   const time = validatedTime(input.time);
   const preference = input.professionalId ?? "any";
   candidates(preference, service);
-  const dni = typeof input.dni === "string" && input.dni.trim()
-    ? input.dni.trim()
-    : (typeof input.phone === "string" && /^\d{8}$/.test(input.phone.trim()) ? input.phone.trim() : null);
-  const reason = typeof input.reason === "string"
-    ? input.reason.trim()
-    : (typeof input.motivo === "string" ? input.motivo.trim() : null);
+  const dniRaw = optionalField(input.dni, "DNI", 20);
+  const dni = dniRaw
+    ?? (typeof input.phone === "string" && /^\d{8}$/.test(input.phone.trim()) ? input.phone.trim() : null);
+  const reason = optionalField(input.reason ?? input.motivo, "motivo", 500);
 
   if (idempotencyKey !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
     throw new HttpError(400, "La referencia de la reserva no es válida.");
   }
   const key = idempotencyKey?.toLowerCase();
+  const confirmNow = input.confirmNow === true;
   // Keep the request fingerprint independent of later edits to the patient's contact details.
   const patientId = key
     ? "hold-" + await bookingToken("idempotency:" + key)
     : randomUUID();
   const token = await bookingToken(patientId);
   const requestHash = key
-    ? await bookingToken("hold-input:" + JSON.stringify([key, service.id, date, time, preference, patient, optIn]))
+    ? await bookingToken("hold-input:" + JSON.stringify([key, service.id, date, time, preference, patient, optIn, confirmNow]))
     : null;
   const hash = digest(token);
   return writeSchedule(async (sql, now) => {
@@ -761,23 +769,40 @@ export async function hold(input: Input, idempotencyKey: string | null = null) {
       const { rows } = await sql.query<Appointment>(rowColumns + " WHERE a.manage_hash=$1", [hash]);
       const prior = rows[0];
       if (prior) {
-        if (prior.holdRequestHash === requestHash && prior.expiresAt && (prior.status === "PENDING" || prior.status === "CONFIRMED")) {
+        if (prior.holdRequestHash === requestHash && (prior.status === "CONFIRMED" || (prior.status === "PENDING" && prior.expiresAt))) {
           ensureActiveLink(prior, now);
-          return { appointment: asPublic(prior), token, expiresAt: prior.expiresAt };
+          return { appointment: asPublic(prior), token, expiresAt: prior.status === "PENDING" ? prior.expiresAt : null };
         }
         throw new HttpError(409, "La referencia corresponde a otra reserva o a un turno que ya terminó.");
       }
     }
     const timing = await chooseSlot(sql, input, service, now);
-    const expiresAt = new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
+    const expiresAt = confirmNow
+      ? undefined
+      : new Date(Math.min(now.getTime() + 10 * minutes, timing.start.getTime()));
     await sql.query("INSERT INTO patients (id,name,phone,email,dni) VALUES ($1,$2,$3,$4,$5)", [
       patientId, patient.name, patient.phone, patient.email, dni,
     ]);
     const appointment = await insertAppointment(sql, {
-      patientId, service, timing, expiresAt, hash, requestHash, optIn, status: "PENDING", dni, reason,
+      patientId,
+      service,
+      timing,
+      expiresAt,
+      hash,
+      requestHash,
+      optIn,
+      status: confirmNow ? "CONFIRMED" : "PENDING",
+      dni,
+      reason,
     });
-    await record(sql, appointment.id, null, "PENDING");
-    return { appointment: asPublic(appointment), token, expiresAt };
+    if (confirmNow) {
+      await assign(sql, appointment);
+      await record(sql, appointment.id, null, "CONFIRMED");
+      await notifications(sql, appointment, now);
+    } else {
+      await record(sql, appointment.id, null, "PENDING");
+    }
+    return { appointment: asPublic(appointment), token, expiresAt: expiresAt ?? null };
   });
 }
 
@@ -822,6 +847,7 @@ async function move(sql: Sql, current: Appointment, input: Input, user: User | n
   const replacement = await insertAppointment(sql, {
     patientId: current.patientId, service, timing, status: "CONFIRMED",
     hash: current.manageHash, optIn: current.optIn, previous: current,
+    dni: current.dni ?? null, reason: current.reason ?? null,
   });
   await record(sql, current.id, user, "RESCHEDULED", reason);
   await record(sql, replacement.id, user, "CONFIRMED", reason);
@@ -857,19 +883,44 @@ export async function manageAppointment(token: string, input: Input) {
 }
 
 function staffFilter(search: URLSearchParams, user: User) {
-  const professional = user.role === "ODONTOLOGO" ? user.professionalId : search.get("professionalId");
-  if (!professional || professional === "any") return null;
-  if (!professionals.some((person) => person.id === professional)) throw new HttpError(400, "Profesional inválido.");
-  return professional;
+  const requested = search.get("professionalId");
+  if (user.role === "ODONTOLOGO") {
+    if (requested && requested !== "any" && requested !== user.professionalId) {
+      if (!professionals.some((person) => person.id === requested)) {
+        throw new HttpError(400, "Profesional inválido.");
+      }
+      throw new HttpError(403, "No puedes consultar la agenda de otro profesional.");
+    }
+    if (!user.professionalId || !professionals.some((person) => person.id === user.professionalId)) {
+      throw new HttpError(403, "Tu cuenta no tiene una agenda profesional asignada.");
+    }
+    return user.professionalId;
+  }
+  if (!requested || requested === "any") return null;
+  if (!professionals.some((person) => person.id === requested)) throw new HttpError(400, "Profesional inválido.");
+  return requested;
 }
 
 export async function agenda(search: URLSearchParams, user: User) {
   const date = validatedDate(search.get("date") ?? limaDate());
-  const days = search.get("days") === "7" ? 7 : 1;
-  const query = [atLima(date), atLima(addDays(date, days)), staffFilter(search, user)];
+  const daysParam = search.get("days");
+  if (daysParam !== null && daysParam !== "1" && daysParam !== "7") {
+    throw new HttpError(400, "Rango de días inválido.");
+  }
+  const days = daysParam === "7" ? 7 : 1;
+  const professionalId = staffFilter(search, user);
+  const query = [atLima(date), atLima(addDays(date, days)), professionalId];
   const db = await getDb();
+  const assignmentScope = user.role === "ODONTOLOGO"
+    ? `AND a.status NOT IN ('PENDING', 'EXPIRED')
+       AND EXISTS (
+         SELECT 1 FROM patient_assignments pa
+         WHERE pa.patient_id = a.patient_id AND pa.professional_id = a.professional_id
+       )`
+    : "";
   const { rows: appointments } = await db.query<Appointment>(rowColumns + `
     WHERE a.starts_at >= $1 AND a.starts_at < $2 AND ($3::text IS NULL OR a.professional_id=$3)
+      ${assignmentScope}
     ORDER BY a.starts_at, a.professional_id
   `, query);
   const { rows: blocks } = await db.query<Block>(`
@@ -908,8 +959,16 @@ async function createBlock(sql: Sql, input: Input, now: Date) {
   return { id };
 }
 
+const agendaActions = new Set(["block", "unblock", "create", "reschedule", "cancel", "mark_reminder_30m", "status"]);
+const validStatuses = new Set([
+  "PENDING", "CONFIRMED", "CANCELLED", "EXPIRED", "RESCHEDULED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "NO_SHOW",
+]);
+
 export async function changeAgenda(input: Input, user: User) {
   const action = field(input.action, "acción", 30);
+  if (!agendaActions.has(action)) {
+    throw new HttpError(400, "Selecciona una acción válida.");
+  }
   if (user.role === "ODONTOLOGO" && !["status", "block", "unblock", "mark_reminder_30m"].includes(action)) {
     throw new HttpError(403, "Recepción o administración gestiona estos cambios de agenda.");
   }
@@ -938,13 +997,23 @@ export async function changeAgenda(input: Input, user: User) {
       return { ok: true };
     }
     if (action === "create") {
-      const patientId = field(input.patientId, "paciente");
-      if (!(await sql.query("SELECT 1 FROM patients WHERE id=$1", [patientId])).rows.length) {
+      const patientId = field(input.patientId, "paciente", 120);
+      if (!/^[A-Za-z0-9_-]+$/.test(patientId)) {
+        throw new HttpError(400, "Identificador de paciente no válido.");
+      }
+      const { rows: patientRows } = await sql.query<{ dni: string | null }>(
+        "SELECT dni FROM patients WHERE id=$1",
+        [patientId],
+      );
+      if (!patientRows.length) {
         throw new HttpError(404, "No encontramos el paciente.");
       }
       const service = svc(input.serviceId);
       const timing = await chooseSlot(sql, input, service, now);
-      const created = await insertAppointment(sql, { patientId, service, timing, status: "CONFIRMED" });
+      const reason = optionalField(input.reason, "motivo", 500);
+      const created = await insertAppointment(sql, {
+        patientId, service, timing, status: "CONFIRMED", dni: patientRows[0].dni, reason,
+      });
       await assign(sql, created);
       await record(sql, created.id, user, "CONFIRMED");
       return { appointment: asAppointment(created) };
@@ -960,6 +1029,9 @@ export async function changeAgenda(input: Input, user: User) {
       return { appointment: asAppointment(await cancel(sql, current, user, optionalField(input.reason, "motivo", 240))) };
     }
     if (action === "mark_reminder_30m") {
+      if (["CANCELLED", "EXPIRED", "RESCHEDULED", "NO_SHOW", "COMPLETED"].includes(current.status)) {
+        throw new HttpError(409, "Esta cita ya no admite aviso de recordatorio.");
+      }
       await sql.query(
         "UPDATE appointments SET reminder_30m_sent_at = COALESCE(reminder_30m_sent_at, $1) WHERE id = $2",
         [now, current.id],
@@ -969,8 +1041,10 @@ export async function changeAgenda(input: Input, user: User) {
       }
       return { appointment: asAppointment(await getAppointment(sql, "a.id", current.id)) };
     }
-    if (action !== "status") throw new HttpError(400, "Selecciona una acción válida.");
     const status = field(input.status, "estado", 30);
+    if (!validStatuses.has(status)) {
+      throw new HttpError(400, "Estado de cita no válido.");
+    }
     if (status === current.status) return { appointment: asAppointment(current) };
     if (!transitions[current.status]?.includes(status)) throw new HttpError(409, "Esta cita no admite ese cambio de estado.");
     if (status === "NO_SHOW" && current.startsAt > now) {

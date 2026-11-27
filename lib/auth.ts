@@ -8,9 +8,11 @@ export type Role = "ADMIN" | "RECEPCION" | "ODONTOLOGO";
 export type User = { id: string; name: string; role: Role; professionalId: string | null };
 type Account = User & { passwordHash: string };
 
-const cookieName = "dental_session";
+export const SESSION_COOKIE = "dental_session";
+export const SESSION_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 const duration = 8 * 60 * 60;
-const tokenPattern = /^[a-f0-9]{64}$/;
+const cookieName = SESSION_COOKIE;
+const tokenPattern = SESSION_TOKEN_PATTERN;
 const missingAccountHash = "0".repeat(32) + ":" + "0".repeat(128);
 
 function tokenFrom(request: Request) {
@@ -25,9 +27,28 @@ function cookie(request: Request, token: string, maxAge: number) {
   return cookieName + "=" + token + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=" + maxAge + secure;
 }
 
-export async function currentUser(request: Request) {
-  const token = tokenFrom(request);
-  if (!token) return null;
+export function sanitizePanelRedirect(target: string | string[] | undefined | null) {
+  const raw = Array.isArray(target) ? target[0] : target;
+  if (!raw || typeof raw !== "string") return "/panel";
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("\\")) {
+    return "/panel";
+  }
+  try {
+    const base = new URL("https://panel.local");
+    const parsed = new URL(trimmed, base);
+    if (parsed.origin !== base.origin) return "/panel";
+    if (parsed.pathname !== "/panel" && !parsed.pathname.startsWith("/panel/")) {
+      return "/panel";
+    }
+    return parsed.pathname + parsed.search;
+  } catch {
+    return "/panel";
+  }
+}
+
+export async function currentUserFromToken(token: string | undefined | null) {
+  if (!token || !tokenPattern.test(token)) return null;
   const db = await getDb();
   const result = await db.query<User>(`
     SELECT u.id, u.name, u.role, u.professional_id AS "professionalId"
@@ -35,6 +56,10 @@ export async function currentUser(request: Request) {
       WHERE s.token_hash = $1 AND s.expires_at > now()
   `, [digest(token)]);
   return result.rows[0] ?? null;
+}
+
+export async function currentUser(request: Request) {
+  return currentUserFromToken(tokenFrom(request));
 }
 
 export async function requireUser(request: Request, roles?: Role[]) {
@@ -49,7 +74,7 @@ export async function requireUser(request: Request, roles?: Role[]) {
 }
 
 export async function login(request: Request, email: string, password: string) {
-  enforceLocalRequestLimit("login");
+  enforceLocalRequestLimit("login", request);
   const db = await getDb();
   const users = await db.query<Account>(`
     SELECT id, name, role, professional_id AS "professionalId", password_hash AS "passwordHash"

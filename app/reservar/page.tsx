@@ -17,7 +17,8 @@ export default async function BookingPage({
   searchParams: Promise<{ servicio?: string | string[] }>;
 }) {
   const { servicio } = await searchParams;
-  const initialServiceId = services.find(({ id }) => id === servicio)?.id ?? "";
+  const requestedService = Array.isArray(servicio) ? servicio[0] : servicio;
+  const initialServiceId = services.find(({ id }) => id === requestedService)?.id ?? "";
   const effectiveService = initialServiceId || services[0]?.id || "evaluacion";
   const effectiveProf = professionals.length === 1 ? professionals[0].id : "any";
   const initialMonthData = await monthlyReservasAvailability(

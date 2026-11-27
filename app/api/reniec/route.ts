@@ -54,7 +54,7 @@ export function GET(request: Request) {
       );
     }
 
-    enforceLocalRequestLimit("reniec");
+    enforceLocalRequestLimit("reniec", request);
 
     const token = process.env.RENIEC_API_TOKEN || process.env.APIS_NET_PE_TOKEN || "";
     const customUrl = process.env.RENIEC_API_URL;
