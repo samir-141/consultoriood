@@ -177,6 +177,8 @@ export type MonthlyAvailability = {
   today: string;
   servicio: string;
   serviceId: string;
+  profesional?: string;
+  professionalId?: string;
   minAdvanceMinutes: number;
   nextAvailableDate: string | null;
   todayStatus: string;
@@ -301,7 +303,11 @@ export function useMonthAvailability(
 
   const matching = request && state?.request === request ? state : null;
   const fallback =
-    !matching && initialData && initialData.mes === month && initialData.servicio === serviceId
+    !matching &&
+    initialData &&
+    initialData.mes === month &&
+    initialData.servicio === serviceId &&
+    (!initialData.profesional || initialData.profesional === professionalId)
       ? initialData
       : null;
 

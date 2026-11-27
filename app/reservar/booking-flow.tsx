@@ -9,6 +9,7 @@ import {
   BookingError,
   bookingMessage,
   calendarHref,
+  isBookingDay,
   postBooking,
   price,
   readableDate,
@@ -18,6 +19,7 @@ import {
   useMonthAvailability,
   useSlots,
   type Appointment,
+  type AppointmentStatus,
   type Catalog,
   type Hold,
   type MonthlyAvailability,
@@ -25,6 +27,34 @@ import {
 } from "./reserva";
 import { CalendarPicker } from "./calendar-picker";
 import styles from "./booking.module.css";
+
+const bookingStatusLabels: Record<AppointmentStatus, string> = {
+  PENDING: "Pendiente de confirmación (retenido 10 min)",
+  CONFIRMED: "Confirmada",
+  CANCELLED: "Cancelada",
+  EXPIRED: "Vencida",
+  RESCHEDULED: "Reprogramada",
+  CHECKED_IN: "Paciente en sede",
+  IN_PROGRESS: "En atención",
+  COMPLETED: "Atendida",
+  NO_SHOW: "Inasistencia",
+};
+
+function generateAttemptKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < 16; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 // 3 pasos fluidos del nuevo flujo:
 // 1. Elegir día en calendario -> se despliega selector animado de horarios (30 min / 45 min)
@@ -90,14 +120,14 @@ export default function BookingFlow({
   const monthHook = useMonthAvailability(visibleMonth, serviceId, professionalId, initialMonthData);
   const monthDays = monthHook.data?.days;
 
-  // Resolver la fecha activa: si el día actual o manual no es reservable en ese mes, saltar al próximo día con cupo
-  const date =
-    manualDate && monthDays?.[manualDate]?.reservable !== false
-      ? manualDate
-      : monthHook.data?.nextAvailableDate ?? manualDate ?? todayStr;
+  // Resolver la fecha activa: al inicio (sin selección manual), saltar al próximo día con cupo;
+  // si el usuario ingresa manualmente una fecha, respetarla para mostrar su estado real (bloqueada, domingo o disponible).
+  const date = manualDate ?? monthHook.data?.nextAvailableDate ?? todayStr;
 
   const selectedDayState = monthDays?.[date];
-  const isSelectedDateBlocked = Boolean(selectedDayState && !selectedDayState.reservable);
+  const isSelectedDateBlocked = Boolean(
+    (date && !isBookingDay(date, todayStr)) || (selectedDayState && !selectedDayState.reservable),
+  );
 
   // Slots del backend mediante hook reactivo useSlots (se abre automáticamente al seleccionar día válido)
   const canQuerySlots = step === 1 && Boolean(date) && !isSelectedDateBlocked;
@@ -121,6 +151,7 @@ export default function BookingFlow({
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const reservationAttempt = useRef<{ payload: string; key: string } | null>(null);
+  const reniecSeqRef = useRef(0);
 
   const currentService = catalog.services.find((s) => s.id === serviceId) ?? catalog.services[0];
   const assignedDoctor = catalog.professionals.find((p) => p.id === professionalId) ?? catalog.professionals[0];
@@ -144,10 +175,12 @@ export default function BookingFlow({
       setReniecNote("Ingresa un DNI de 8 dígitos para consultar en RENIEC.");
       return;
     }
+    const seq = ++reniecSeqRef.current;
     setReniecBusy(true);
     setReniecNote("");
     try {
       const res = await lookupDniReniec(clean);
+      if (seq !== reniecSeqRef.current) return;
       if (res.ok && res.fullName) {
         setPatient((prev) => ({
           ...prev,
@@ -159,21 +192,23 @@ export default function BookingFlow({
         setReniecNote(res.message ?? res.error ?? "No se encontró el DNI en RENIEC; ingresa el nombre manualmente.");
       }
     } catch {
-      setReniecNote("No pudimos consultar RENIEC ahora; ingresa el nombre manualmente.");
+      if (seq === reniecSeqRef.current) {
+        setReniecNote("No pudimos consultar RENIEC ahora; ingresa el nombre manualmente.");
+      }
     } finally {
-      setReniecBusy(false);
+      if (seq === reniecSeqRef.current) setReniecBusy(false);
     }
   }
 
-  // Validación en cliente del Paso 3
+  // Validación en cliente del Paso 2
   function validatePatientClient(): boolean {
     const errors: Record<string, string> = {};
     if (!patient.name.trim() || patient.name.trim().length < 2) {
       errors.name = "Por favor ingresa tu nombre y apellido (mínimo 2 caracteres).";
     }
-    const phoneOrDni = patient.phone.trim();
-    if (!phoneOrDni || phoneOrDni.length < 6) {
-      errors.phone = "Por favor ingresa tu teléfono o DNI de contacto.";
+    const cleanPhone = patient.phone.trim().replace(/[\s()-]/g, "");
+    if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
+      errors.phone = "Ingresa un teléfono válido de 7 a 15 dígitos (o DNI de 8 dígitos).";
     }
     if (patient.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patient.email.trim())) {
       errors.email = "Ingresa un correo electrónico válido o déjalo en blanco.";
@@ -182,7 +217,7 @@ export default function BookingFlow({
     return Object.keys(errors).length === 0;
   }
 
-  // Enviar reserva (Paso 3 -> Paso 4)
+  // Enviar reserva (Paso 2 -> Paso 3)
   async function handleSubmitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedSlot || !currentService || submitting) return;
@@ -193,6 +228,7 @@ export default function BookingFlow({
     setServerError("");
 
     try {
+      const normalizedPhone = patient.phone.trim().replace(/[\s()-]/g, "");
       const data = {
         serviceId: currentService.id,
         date: selectedSlot.date,
@@ -200,7 +236,7 @@ export default function BookingFlow({
         professionalId: selectedSlot.professionalId,
         name: patient.name.trim(),
         phone: patient.phone.trim(),
-        dni: patient.dni.trim() || (patient.phone.trim().length === 8 ? patient.phone.trim() : undefined),
+        dni: patient.dni.trim() || (/^\d{8}$/.test(normalizedPhone) ? normalizedPhone : undefined),
         email: patient.email.trim() || undefined,
         reason: patient.reason.trim() || undefined,
         whatsappOptIn: patient.whatsappOptIn,
@@ -208,7 +244,7 @@ export default function BookingFlow({
 
       const payload = JSON.stringify(data);
       if (reservationAttempt.current?.payload !== payload) {
-        reservationAttempt.current = { payload, key: crypto.randomUUID() };
+        reservationAttempt.current = { payload, key: generateAttemptKey() };
       }
 
       const result = await postBooking<Hold>("/api/reservas", data, reservationAttempt.current.key);
@@ -423,7 +459,7 @@ export default function BookingFlow({
                     loadingMonth={monthHook.loading}
                     onMonthChange={(m) => setVisibleMonth(m)}
                     onSelectDate={(newDate) => {
-                      setManualDate(newDate);
+                      setManualDate(newDate || null);
                       setSelectedSlot(null);
                       if (newDate && newDate.length >= 7) {
                         setVisibleMonth(newDate.slice(0, 7));
@@ -644,7 +680,11 @@ export default function BookingFlow({
                   <input
                     id="patient-phone"
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={30}
                     required
+                    aria-invalid={Boolean(formErrors.phone)}
                     placeholder="Ej. 966000000"
                     value={patient.phone}
                     onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
@@ -661,7 +701,10 @@ export default function BookingFlow({
                 <input
                   id="patient-name"
                   type="text"
+                  autoComplete="name"
+                  maxLength={120}
                   required
+                  aria-invalid={Boolean(formErrors.name)}
                   placeholder="Se completa con RENIEC o escríbelo manualmente"
                   value={patient.name}
                   onChange={(e) => setPatient({ ...patient, name: e.target.value })}
@@ -677,6 +720,12 @@ export default function BookingFlow({
                 <input
                   id="patient-email"
                   type="email"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={160}
+                  aria-invalid={Boolean(formErrors.email)}
                   placeholder="ejemplo@correo.com"
                   value={patient.email}
                   onChange={(e) => setPatient({ ...patient, email: e.target.value })}
@@ -692,6 +741,7 @@ export default function BookingFlow({
                 <textarea
                   id="patient-reason"
                   rows={3}
+                  maxLength={500}
                   placeholder="Cuéntanos brevemente si presentas algún dolor, molestia o qué deseas consultar..."
                   value={patient.reason}
                   onChange={(e) => setPatient({ ...patient, reason: e.target.value })}
@@ -779,7 +829,9 @@ export default function BookingFlow({
                       </div>
                       <div className={styles.summaryItem}>
                         <dt>Odontólogo asignado</dt>
-                        <dd>{appt.professionalName} ({assignedDoctor.title})</dd>
+                        <dd>
+                          {appt.professionalName} ({catalog.professionals.find((p) => p.id === appt.professionalId)?.title ?? assignedDoctor.title})
+                        </dd>
                       </div>
                       <div className={styles.summaryItem}>
                         <dt>Fecha y Hora</dt>
@@ -801,7 +853,7 @@ export default function BookingFlow({
                       )}
                       <div className={styles.summaryItemFull}>
                         <dt>Estado de la cita</dt>
-                        <dd className={styles.statusBadge}>{appt.status}</dd>
+                        <dd className={styles.statusBadge}>{bookingStatusLabels[appt.status] ?? appt.status}</dd>
                       </div>
                     </dl>
                   </div>

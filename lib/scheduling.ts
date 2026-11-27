@@ -198,11 +198,13 @@ function asAppointment(row: Appointment, now = new Date()) {
 }
 
 function asPublic(row: Appointment) {
-  const { patientId, patientPhone, reminder30mSentAt, patientAssigned, ...appointment } = asAppointment(row);
+  const { patientId, patientPhone, reminder30mSentAt, patientAssigned, dni, reason, ...appointment } = asAppointment(row);
   void patientId;
   void patientPhone;
   void reminder30mSentAt;
   void patientAssigned;
+  void dni;
+  void reason;
   return appointment;
 }
 

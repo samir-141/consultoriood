@@ -74,7 +74,7 @@ export async function requireUser(request: Request, roles?: Role[]) {
 }
 
 export async function login(request: Request, email: string, password: string) {
-  enforceLocalRequestLimit("login");
+  enforceLocalRequestLimit("login", request);
   const db = await getDb();
   const users = await db.query<Account>(`
     SELECT id, name, role, professional_id AS "professionalId", password_hash AS "passwordHash"

@@ -20,7 +20,7 @@ export function POST(request: Request) {
   return api(async () => {
     const rawBody = await readJson(request);
     const body = validateReservasCreate(rawBody);
-    enforceLocalRequestLimit("booking");
+    enforceLocalRequestLimit("booking", request);
     const booking = await hold(body, request.headers.get("idempotency-key"));
     return Response.json(booking, { status: 201 });
   });
