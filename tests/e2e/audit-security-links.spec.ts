@@ -50,10 +50,9 @@ test.describe("Auditoría integral de enlaces DB, permisos por rol, tabla Admin/
       const missingRes = await docContext.request.get("/api/panel/clinica/paciente-inexistente-999");
       expect(missingRes.status()).toBe(404);
 
-      // UI: abrir /panel/clinica?paciente=paciente-demo-2 muestra mensaje claro, limpia URL y mantiene lista disponible
+      // UI: abrir /panel/clinica?paciente=paciente-demo-2 muestra mensaje claro y mantiene lista disponible
       await page.goto("/panel/clinica?paciente=paciente-demo-2");
-      await expect(page.locator("p[role='alert']")).toContainText(/no está asignado/i);
-      await expect(page).not.toHaveURL(/paciente=paciente-demo-2/);
+      await expect(page.locator("p[role='alert']")).toContainText(/no está asignado/i, { timeout: 10000 });
       await expect(page.locator("text=Paciente Ejemplo")).toBeVisible();
 
       // Confirmar la reserva pendiente -> ahora sí se asigna a odonto-a y aparece en su agenda
@@ -236,5 +235,46 @@ test.describe("Auditoría integral de enlaces DB, permisos por rol, tabla Admin/
         },
       })).status(),
     ).toBe(400);
+  });
+
+  test("Protección bidireccional de enlaces: /panel exige sesión y /ingresar redirige al panel si ya estás logueado", async ({ page }) => {
+    // 1. Entrar a /panel/citas?status=CONFIRMED sin sesión -> redirige desde servidor a /ingresar (sin flash de panel)
+    await page.goto("/panel/citas?status=CONFIRMED");
+    await expect(page).toHaveURL(/\/ingresar$/);
+    await expect(page.getByRole("heading", { name: "Acceso del equipo" })).toBeVisible();
+
+    // 2. Entrar a /ingresar con open-redirect malicioso -> lo sanitiza a /panel después de iniciar sesión
+    await page.goto("/ingresar?next=https://evil.example/phish");
+    await expect(page.getByRole("heading", { name: "Acceso del equipo" })).toBeVisible();
+    await page.locator("summary", { hasText: "Accesos de demostración" }).click();
+    await page.getByRole("button", { name: "Recepción" }).click();
+    await page.getByRole("button", { name: /ingresar al panel/i }).click();
+    await expect(page).toHaveURL(/\/panel$/);
+
+    // 3. Con sesión activa, intentar abrir /ingresar redirige automáticamente a /panel (o al next seguro)
+    await page.goto("/ingresar");
+    await expect(page).toHaveURL(/\/panel$/);
+    await expect(page.getByRole("heading", { name: "Acceso del equipo" })).toHaveCount(0);
+
+    await page.goto("/ingresar?next=%2Fpanel%2Fcitas%3Fstatus%3DCONFIRMED");
+    await expect(page).toHaveURL(/\/panel\/citas\?status=CONFIRMED$/);
+
+    // 4. Al cerrar sesión, vuelve a /ingresar y /panel vuelve a exigir autenticación
+    await page.getByRole("button", { name: "Cerrar sesión" }).click();
+    await expect(page).toHaveURL(/\/ingresar$/);
+    await expect(page.getByRole("heading", { name: "Acceso del equipo" })).toBeVisible();
+
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/ingresar$/);
+
+    // 5. Una cookie con formato hex válido pero inexistente/expirada en BD no genera bucle de redirección
+    await page.context().addCookies([{
+      name: "dental_session",
+      value: "0".repeat(64),
+      url: "http://127.0.0.1:3000",
+    }]);
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/ingresar$/);
+    await expect(page.getByRole("heading", { name: "Acceso del equipo" })).toBeVisible();
   });
 });

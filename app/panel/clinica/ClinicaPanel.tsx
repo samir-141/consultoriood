@@ -103,7 +103,6 @@ export default function ClinicaPanel({
         setRecord(null);
         setPatientId("");
         setPatientQuery("");
-        updatePatientQuery("");
         const msg = errorMessage(reason);
         setError(
           msg.includes("asignado")
